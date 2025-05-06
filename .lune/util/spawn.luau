@@ -9,15 +9,15 @@ local task = require("@lune/task")
 --- @param cmd string
 --- @param options process.SpawnOptions?
 --- @return process.SpawnResult
-local function start_process(cmd: string, options: process.SpawnOptions?): process.SpawnResult
+local function start_process(cmd: string, options: process.ExecOptions?): process.ExecResult
     local arguments = string.split(cmd, " ")
     local command = arguments[1]
     table.remove(arguments, 1)
 
-    local opts: process.SpawnOptions = options ~= nil and options or {}
-    opts.stdio = opts.stdio ~= nil and opts.stdio or "forward"
+    local opts: process.ExecOptions = options ~= nil and options or {}
+    opts.stdio = opts.stdio ~= nil and opts.stdio or "forward" :: any
 
-    return process.spawn(command, arguments, opts)
+    return process.exec(command, arguments, opts)
 end
 
 --- `task.spawn` a process with the given command and options
@@ -27,7 +27,7 @@ end
 --- @param cmd string
 --- @param options process.SpawnOptions?
 --- @return process.SpawnResult
-local function spawn_process(cmd: string, options: process.SpawnOptions?)
+local function spawn_process(cmd: string, options: process.ExecOptions?)
     task.spawn(start_process, cmd, options)
 end
 

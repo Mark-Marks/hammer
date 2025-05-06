@@ -1,18 +1,15 @@
 --!strict
 -- stylua: ignore start
+local hammer = require("../lib")
 local jecs = require("@pkg/jecs")
-local jecs_utils = require("@lib/init")
 local testkit = require("./testkit")
 
-type entity<T = nil> = jecs.Entity<T>
+type Entity<T = unknown> = jecs.Entity<T>
 
-local collect = jecs_utils.collect
-local handle = jecs_utils.handle
-local replicator = jecs_utils.replicator
-local ref = jecs_utils.ref
-local ref_search = ref.search
-local command_buffer = jecs_utils.command_buffer
-local spawner = jecs_utils.spawner
+local collect = hammer.collect
+local make_tracker = hammer.tracker
+local make_ref = hammer.ref
+local make_command_buffer = hammer.command_buffer
 
 local signal = require("./signal")
 
@@ -20,9 +17,9 @@ local BENCH, START = testkit.benchmark()
 
 local TEST, CASE, CHECK, FINISH, SKIP, FOCUS = testkit.test()
 
-TEST("jecs_utils.collect()", function()
+TEST("hammer.collect()", function()
     do CASE "collects"
-        local sig: signal.signal<number> = signal()
+        local sig: signal.Signal<number> = signal()
         local flush = collect(sig)
         local should = {}
 
@@ -38,169 +35,152 @@ TEST("jecs_utils.collect()", function()
     end
 end)
 
-TEST("jecs_utils.handle()", function()
-    do CASE "has"
-        local world = jecs.World.new()
-        jecs_utils.initialize(world)
-
-        local entity = world:entity()
-        local tag = world:entity()
-
-        world:add(entity, tag)
-        CHECK(handle(entity):has(tag))
-    end
-
-    do CASE "get"
-        local world = jecs.World.new()
-        jecs_utils.initialize(world)
-
-        local entity = world:entity()
-        local component = world:component()
-
-        world:set(entity, component, 50)
-        CHECK(handle(entity):get(component) == 50)
-    end
-
-    do CASE "add"
-        local world = jecs.World.new()
-        jecs_utils.initialize(world)
-
-        local entity = world:entity()
-        local tag = world:entity()
-
-        handle(entity):add(tag)
-        CHECK(world:has(entity, tag))
-    end
-
-    do CASE "set"
-        local world = jecs.World.new()
-        jecs_utils.initialize(world)
-
-        local entity = world:entity()
-        local component = world:component()
-
-        handle(entity):set(component, 50)
-        CHECK(world:get(entity, component) == 50)
-    end
-
-    do CASE "remove"
-        local world = jecs.World.new()
-        jecs_utils.initialize(world)
-
-        local entity = world:entity()
-        local component = world:component()
-
-        handle(entity):set(component, 50)
-        CHECK(world:get(entity, component) == 50)
-    end
-
-    do CASE "delete"
-        local world = jecs.World.new()
-        jecs_utils.initialize(world)
-
-        local entity = world:entity()
-        handle(entity):delete()
-        CHECK(not world:contains(entity))
-    end
-end)
-
-TEST("jecs_utils.ref()", function()
+TEST("hammer.ref()", function()
     do CASE "set_ref"
         local world = jecs.World.new()
-        jecs_utils.initialize(world)
+        local ref = make_ref(world, true)
 
-        local a: number = ref(1234):id()
-        local b: number = ref(1234):id()
+        local a = ref(1234)
+        local b = ref(1234)
         CHECK(a == b)
     end
 
-    do CASE "search"
+    do CASE "find"
         local world = jecs.World.new()
-        jecs_utils.initialize(world)
+        local ref = make_ref(world, true)
 
-        local a: number = ref(1234):id()
-        local b = ref_search(1234)
-        assert(b) -- give me the type refinements...
-        CHECK(a == b:id() :: number)
+        local a = ref(1234)
+        local b = ref.find(1234)
+        CHECK(a == b)
     end
 
-    do CASE "clearer"
+    do CASE "cleaner"
         local world = jecs.World.new()
-        jecs_utils.initialize(world)
+        local ref = make_ref(world, true)
 
-        local a, a_clear = ref(1234);
-        (a_clear :: any)()
+        local a, clean = ref(1234)
+        clean()
         local b = ref(1234)
-        CHECK(b:id() :: number ~= a:id() :: number)
+        CHECK(b ~= a)
+    end
+
+    do CASE "caching"
+        local world = jecs.World.new()
+        local ref_a = make_ref(world)
+        local ref_b = make_ref(world)
+        CHECK(ref_a == ref_b)
+        local ref_c = make_ref(world, true)
+        CHECK(ref_c ~= ref_a and ref_c ~= ref_b)
     end
 end)
 
-TEST("jecs_utils.replicator()", function()
-    do CASE "propagates difference"
+-- TODO! write extensive tests for state operation cleaning
+TEST("hammer.tracker()", function()
+    do CASE "snapshot"
         local world = jecs.World.new()
         local tag = world:entity()
-        local component: jecs.Entity<number> = world:component()
+        local component = world:component() :: Entity<number>
 
         local entity1 = world:entity()
         local entity2 = world:entity()
 
-        jecs_utils.initialize(world)
-        local rep = replicator(component, tag)
+        local tracker = make_tracker(world, component, tag)
 
         world:add(entity1, tag)
         world:set(entity2, component, 50)
 
-        local difference: jecs_utils.changes = rep.calculate_difference() :: any
-        CHECK(difference ~= nil)
+        local snapshot = tracker.snapshot()
+        CHECK(snapshot ~= nil)
+        assert(snapshot) -- Refinements
 
         local world2 = jecs.World.new()
-        local component2: jecs.Entity<number> = world2:component()
+        local component2 = world2:component() :: Entity<number>
         local tag2 = world2:entity()
 
-        jecs_utils.initialize(world2)
-        local rep2 = replicator(component2, tag2)
+        local tracker2 = make_tracker(world2, component2, tag2)
 
-        rep2.apply_difference(difference)
+        tracker2.apply(snapshot)
 
-        CHECK(ref(`replicated-{entity1}`):has(tag2))
-        CHECK(ref(`replicated-{entity2}`):get(component2) == 50)
+        CHECK(world:has(entity1, tag2))
+        CHECK(world:get(entity2, component2) == 50)
     end
 
-    do CASE "propagates full data"
+    do CASE "state"
         local world = jecs.World.new()
         local tag = world:entity()
-        local component: jecs.Entity<number> = world:component()
+        local component = world:component() :: Entity<number>
 
         local entity1 = world:entity()
         local entity2 = world:entity()
 
-        jecs_utils.initialize(world)
-        local rep = replicator(component, tag)
+        local tracker = make_tracker(world, component, tag)
 
         world:add(entity1, tag)
         world:set(entity2, component, 50)
 
-        local full_data = rep.get_full_data()
-        CHECK(full_data ~= nil)
+        local state = tracker.state()
+        CHECK(state ~= nil)
 
         local world2 = jecs.World.new()
-        local component2: jecs.Entity<number> = world2:component()
+        local component2 = world2:component() :: Entity<number>
         local tag2 = world2:entity()
 
-        jecs_utils.initialize(world2)
-        local rep2 = replicator(component2, tag2)
+        local tracker2 = make_tracker(world2, component2, tag2)
 
-        rep2.apply_difference(full_data)
+        tracker2.apply(state)
 
-        CHECK(ref(`replicated-{entity1}`):has(tag2))
-        CHECK(ref(`replicated-{entity2}`):get(component2) == 50)
+        CHECK(world:has(entity1, tag2))
+        CHECK(world:get(entity2, component2) == 50)
+    end
+
+    do CASE "simplifying"
+        local world = jecs.World.new()
+        local component = world:component() :: Entity<number>
+
+        local entity = world:entity()
+        local tracker = make_tracker(world, component)
+
+        world:add(entity, component)
+        do
+            local state = tracker.state()
+            CHECK(table.find(state.added[component :: any], entity))
+        end
+        world:set(entity, component, 50)
+        do
+            local state = tracker.state()
+            CHECK(not table.find(state.added[component :: any], entity))
+            CHECK(state.set[component :: any][entity :: any] == 50)
+        end
+        world:remove(entity, component)
+        do
+            local state = tracker.state()
+            CHECK(state.set[component :: any][entity :: any] == nil)
+            CHECK(table.find(state.removed[component :: any], entity))
+        end
+        world:add(entity, component)
+        do
+            local state = tracker.state()
+            CHECK(not table.find(state.removed[component :: any], entity))
+        end
+        world:remove(entity, component)
+        do
+            local state = tracker.state()
+            CHECK(state.set[component :: any][entity :: any] == nil)
+            CHECK(table.find(state.removed[component :: any], entity))
+        end
+        world:set(entity, component, 50)
+        do
+            local state = tracker.state()
+            CHECK(not table.find(state.removed[component :: any], entity))
+            CHECK(state.set[component :: any][entity :: any] == 50)
+        end
     end
 end)
 
-TEST("jecs_utils.command_buffer", function()
+TEST("hammer.command_buffer()", function()
     do CASE "add"
         local world = jecs.World.new()
-        jecs_utils.initialize(world)
+        local command_buffer = make_command_buffer(world)
 
         local tag = world:entity()
         local entity = world:entity()
@@ -215,7 +195,7 @@ TEST("jecs_utils.command_buffer", function()
 
     do CASE "set"
         local world = jecs.World.new()
-        jecs_utils.initialize(world)
+        local command_buffer = make_command_buffer(world)
 
         local component = world:component()
         local entity = world:entity()
@@ -230,7 +210,7 @@ TEST("jecs_utils.command_buffer", function()
 
     do CASE "remove"
         local world = jecs.World.new()
-        jecs_utils.initialize(world)
+        local command_buffer = make_command_buffer(world)
 
         local component = world:component()
         local entity = world:entity()
@@ -246,7 +226,7 @@ TEST("jecs_utils.command_buffer", function()
 
     do CASE "delete"
         local world = jecs.World.new()
-        jecs_utils.initialize(world)
+        local command_buffer = make_command_buffer(world)
 
         local entity = world:entity()
         command_buffer.delete(entity)
@@ -255,51 +235,32 @@ TEST("jecs_utils.command_buffer", function()
 
         CHECK(not world:contains(entity))
     end
-end)
 
-TEST("jecs_utils.spawner()", function()
-    do CASE "spawn"
+    do CASE "peek"
         local world = jecs.World.new()
-        jecs_utils.initialize(world)
+        local command_buffer = make_command_buffer(world)
 
-        local c1: entity<number> = world:component()
-        local c2: entity<string> = world:component()
-        local c3: entity<{}> = world:component()
+        local tag1 = world:entity()
+        local entity1 = world:entity()
+        command_buffer.add(entity1, tag1)
 
-        local t1 = world:entity()
+        local component1 = world:component()
+        local entity2 = world:entity()
+        command_buffer.set(entity2, component1, 50)
 
-        local entity_spawner = spawner(c1, c2, c3, t1)
+        local tag2 = world:component()
+        local entity3 = world:entity()
+        command_buffer.remove(entity3, tag2)
 
-        local tbl = {}
+        local entity4 = world:component()
+        command_buffer.delete(entity4)
 
-        local idx = entity_spawner.spawn(1234, "abcdef", tbl)
-        CHECK(world:contains(idx))
-        CHECK(world:get(idx, c1) == 1234)
-        CHECK(world:get(idx, c2) == "abcdef")
-        CHECK(world:get(idx, c3) == tbl)
-        CHECK(world:has(idx, t1))
-    end
-
-    do CASE "spawn_with_handle"
-        local world = jecs.World.new()
-        jecs_utils.initialize(world)
-
-        local c1: entity<number> = world:component()
-        local c2: entity<string> = world:component()
-        local c3: entity<{}> = world:component()
-
-        local t1 = world:entity()
-
-        local entity_spawner = spawner(c1, c2, c3, t1)
-
-        local tbl = {}
-
-        local ent = entity_spawner.spawn_with_handle(1234, "abcdef", tbl)
-        CHECK(world:contains(ent:id()))
-        CHECK(ent:get(c1) == 1234)
-        CHECK(ent:get(c2) == "abcdef")
-        CHECK(ent:get(c3) == tbl)
-        CHECK(ent:has(t1))
+        local commands = command_buffer.peek()
+        CHECK(table.find(commands.add[tag1], entity1))
+        CHECK(commands.set[component1][entity2] == 50)
+        CHECK(table.find(commands.remove[tag2], entity3))
+        CHECK(table.find(commands.delete, entity4))
+        CHECK(commands.deletion_lookup[entity4] == true)
     end
 end)
 

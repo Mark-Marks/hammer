@@ -1,7 +1,4 @@
 --!strict
-local spawn = require("util/spawn")
+local spawn = require("./util/spawn")
 
-spawn.start("lune run install-packages")
-spawn.start("rojo sourcemap dev.project.json -o sourcemap.json")
-spawn.start("darklua process --config .darklua.json lib/ dist/", { env = { ROBLOX_DEV = "false" } })
-spawn.start("rojo build default.project.json -o build.rbxm")
+spawn.start("rojo build default.project.json -o hammer.rbxm")

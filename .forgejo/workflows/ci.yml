@@ -1,0 +1,98 @@
+name: Continous Integration
+
+on:
+  push:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build
+    runs-on: docker
+    container:
+      image: ghcr.io/catthehacker/ubuntu:act-24.04
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v4
+
+      - name: Install Rokit
+        uses: https://github.com/CompeyDev/setup-rokit@v0.1.2
+        with:
+          token: ${{ secrets.githubtoken }}
+
+      - name: Build
+        run: |
+          lune run build
+
+      - name: Upload Build Artifact
+        uses: https://git.devmarked.win/actions/upload-artifact@v4
+        with:
+          name: build
+          path: hammer.rbxm
+
+  lint:
+    name: Lint
+    runs-on: docker
+    container:
+      image: ghcr.io/catthehacker/ubuntu:act-24.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Rokit
+        uses: https://github.com/CompeyDev/setup-rokit@v0.1.2
+        with:
+          token: ${{ secrets.githubtoken }}
+
+      - name: Lint
+        run: |
+          selene lib/
+
+  style:
+    name: Styling
+    runs-on: docker
+    container:
+      image: ghcr.io/catthehacker/ubuntu:act-24.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Check code style
+        uses: https://github.com/JohnnyMorganz/stylua-action@v4
+        with:
+          token: ${{ secrets.githubtoken }}
+          version: v2.1.0
+          args: --check lib/
+
+  test:
+    name: Unit Testing
+    runs-on: docker
+    container:
+      image: ghcr.io/catthehacker/ubuntu:act-24.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Luau
+        uses: https://github.com/EncodedVenom/install-luau@v4
+
+      - name: Install Rokit
+        uses: https://github.com/CompeyDev/setup-rokit@v0.1.2
+        with:
+          token: ${{ secrets.githubtoken }}
+
+      - name: Install Packages
+        run: |
+          pesde install
+
+      - name: Run Unit Tests
+        run: |
+          output=$(luau test/tests.luau)
+          echo "$output"
+          if [[ "$output" == *"0 fails"* ]]; then
+            echo "Unit Tests Passed"
+          else
+            echo "Error: One or More Unit Tests Failed."
+            exit 1
+          fi

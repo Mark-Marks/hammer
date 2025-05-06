@@ -3,19 +3,19 @@
 -- https://github.com/red-blox/Util/blob/main/libs/Signal/Signal.luau
 -- adapted to work in pure luau
 
-type node<T...> = {
-    next: node<T...>?,
+type Node<T...> = {
+    next: Node<T...>?,
     callback: (T...) -> (),
 }
 
-export type signal<T...> = {
-    root: node<T...>?,
+export type Signal<T...> = {
+    root: Node<T...>?,
 
-    connect: (self: signal<T...>, Callback: (T...) -> ()) -> () -> (),
-    wait: (self: signal<T...>) -> T...,
-    once: (self: signal<T...>, Callback: (T...) -> ()) -> () -> (),
-    fire: (self: signal<T...>, T...) -> (),
-    disconnect_all: (self: signal<T...>) -> (),
+    connect: (self: Signal<T...>, Callback: (T...) -> ()) -> () -> (),
+    wait: (self: Signal<T...>) -> T...,
+    once: (self: Signal<T...>, Callback: (T...) -> ()) -> () -> (),
+    fire: (self: Signal<T...>, T...) -> (),
+    disconnect_all: (self: Signal<T...>) -> (),
 }
 
 local Signal = {}
@@ -23,7 +23,7 @@ Signal.__index = Signal
 
 -- Extracted this function from Connect as it results in the closure
 -- made in Connect using less memory because this function can be static
-local function disconnect<T...>(self: signal<T...>, Node: node<T...>)
+local function disconnect<T...>(self: Signal<T...>, Node: Node<T...>)
     if self.root == Node then
         self.root = Node.next
     else
@@ -40,7 +40,7 @@ local function disconnect<T...>(self: signal<T...>, Node: node<T...>)
     end
 end
 
-function Signal.connect<T...>(self: signal<T...>, Callback: (T...) -> ()): () -> ()
+function Signal.connect<T...>(self: Signal<T...>, Callback: (T...) -> ()): () -> ()
     local node = {
         next = self.root,
         callback = Callback,
@@ -53,30 +53,30 @@ function Signal.connect<T...>(self: signal<T...>, Callback: (T...) -> ()): () ->
     end
 end
 
-function Signal.wait<T...>(self: signal<T...>): T...
+function Signal.wait<T...>(self: Signal<T...>): T...
     local Thread = coroutine.running()
     local Disconnect
 
     Disconnect = self:connect(function(...)
-        Disconnect()
+        (Disconnect :: any)()
         coroutine.resume(Thread, ...)
     end)
 
     return coroutine.yield()
 end
 
-function Signal.once<T...>(self: signal<T...>, Callback: (T...) -> ()): () -> ()
+function Signal.once<T...>(self: Signal<T...>, Callback: (T...) -> ()): () -> ()
     local Disconnect
 
     Disconnect = self:connect(function(...)
-        Disconnect()
+        (Disconnect :: any)()
         Callback(...)
     end)
 
     return Disconnect
 end
 
-function Signal.fire<T...>(self: signal<T...>, ...: T...)
+function Signal.fire<T...>(self: Signal<T...>, ...: T...)
     local Current = self.root
 
     while Current do
@@ -85,11 +85,11 @@ function Signal.fire<T...>(self: signal<T...>, ...: T...)
     end
 end
 
-function Signal.disconnect_all<T...>(self: signal<T...>)
+function Signal.disconnect_all<T...>(self: Signal<T...>)
     self.root = nil
 end
 
-return function<T...>(): signal<T...>
+return function<T...>(): Signal<T...>
     return setmetatable({
         root = nil,
     }, Signal) :: any

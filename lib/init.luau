@@ -1,42 +1,22 @@
 --!strict
 --!optimize 2
-local jecs = require("../jecs")
+local collect = require("@self/utilities/collect")
+export type SignalLike<T...> = collect.SignalLike<any, T...>
+export type VerboseSignalLike<D, T...> = collect.SignalLike<D, T...>
 
-local WORLD = require("./world")
+local ref = require("@self/utilities/ref")
+export type Ref = ref.Identity
 
-local collect = require("./collect")
-export type collect_signal_like<T...> = collect.signal_like<any, T...>
-export type collect_verbose_signal_like<D, T...> = collect.signal_like<D, T...>
+local tracker = require("@self/utilities/tracker")
+export type Tracker = tracker.Identity
+export type TrackerCommands = tracker.Commands
 
-local command_buffer = require("./command_buffer")
-export type command_buffer = command_buffer.command_buffer
-
-local handle = require("./handle")
-export type handle = handle.handle
-
-local ref = require("./ref")
-
-local replicator = require("./replicator")
-export type replicator = replicator.replicator
-export type changes = replicator.changes
-
-local spawner = require("./spawner")
-export type spawner<T...> = spawner.spawner<T...>
-
---- Set the world for all utilities.
---- Should be called once per context before any utility is used.
---- @param world jecs.World
-local function initialize(world: jecs.World)
-    WORLD.set(world)
-end
+local command_buffer = require("@self/utilities/command_buffer")
+export type CommandBuffer = command_buffer.Identity
 
 return {
-    initialize = initialize,
-
     collect = collect,
-    handle = handle,
-    replicator = replicator,
     ref = ref,
+    tracker = tracker,
     command_buffer = command_buffer,
-    spawner = spawner,
 }

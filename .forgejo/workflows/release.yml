@@ -7,28 +7,34 @@ on:
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: docker
+    container:
+      image: ghcr.io/catthehacker/ubuntu:act-24.04
     steps:
       - name: Checkout Project
         uses: actions/checkout@v4
 
       - name: Install Rokit
-        uses: CompeyDev/setup-rokit@v0.1.2
+        uses: https://github.com/CompeyDev/setup-rokit@v0.1.2
+        with:
+          token: ${{ secrets.githubtoken }}
 
       - name: Build
         run: |
           lune run build
 
       - name: Upload Build Artifact
-        uses: actions/upload-artifact@v3
+        uses: https://git.devmarked.win/actions/upload-artifact@v4
         with:
           name: build
-          path: build.rbxm
+          path: hammer.rbxm
 
   release:
     name: Release
     needs: [build]
-    runs-on: ubuntu-latest
+    runs-on: docker
+    container:
+      image: ghcr.io/catthehacker/ubuntu:act-24.04
     permissions:
       contents: write
     steps:
@@ -36,35 +42,32 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download Build
-        uses: actions/download-artifact@v3
+        uses: https://git.devmarked.win/actions/download-artifact@v4
         with:
           name: build
           path: build
 
-      - name: Rename Build
-        run: mv build/build.rbxm jecs_utils.rbxm
-
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: actions/forgejo-release@v2
         with:
-          name: Jecs Utils ${{ github.ref_name }}
-          files: |
-            jecs_utils.rbxm
+          direction: upload
+          title: Hammer ${{ github.ref_name }}
+          release-dir: build
 
   publish:
     name: Publish
     needs: [release]
-    runs-on: ubuntu-latest
+    runs-on: docker
+    container:
+      image: ghcr.io/catthehacker/ubuntu:act-24.04
     steps:
       - name: Checkout Project
         uses: actions/checkout@v4
 
       - name: Install Rokit
-        uses: CompeyDev/setup-rokit@v0.1.2
-
-      - name: Prepare for Distribution
-        run: |
-          lune run dist
+        uses: https://github.com/CompeyDev/setup-rokit@v0.1.2
+        with:
+          token: ${{ secrets.githubtoken }}
 
       - name: Wally Login
         run: wally login --token ${{ secrets.WALLY_AUTH_TOKEN }}

@@ -1,6 +1,6 @@
 {
-  "name": "jecs-utils",
+  "name": "hammer",
   "tree": {
-    "$path": "dist"
+    "$path": "lib"
   }
 }

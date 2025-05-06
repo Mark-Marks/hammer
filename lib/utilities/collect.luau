@@ -1,6 +1,5 @@
 --!strict
 --!optimize 2
-
 --[[
 original author by @memorycode
 
@@ -28,24 +27,12 @@ SOFTWARE.
 --]]
 
 --- What signals passed to `collect()` should be able to be coerced into
-export type signal_like<D, T...> = { connect: confn<D, T...>, [any]: any } | { Connect: confn<D, T...>, [any]: any }
-type confn<D, T...> = (self: signal_like<D, T...>, (T...) -> ()) -> D
+export type SignalLike<D, T...> = { connect: Connector<D, T...>, [any]: any } | { Connect: Connector<D, T...>, [any]: any }
+type Connector<D, T...> = (self: SignalLike<D, T...>, (T...) -> ()) -> D
 
 --- Collects all arguments fired through the given signal, and drains the collection on iteration.\
---- Expects signals to have a `Connect` ***method***.
---- ```luau
---- local sig = collect(some_signal)
----
---- -- Imagine this as an ECS scheduler loop
---- while task.wait() do
----     for index, arg1 in sig do -- arg1, arg2, etc
----         print(arg1)
----     end
---- end
---- ```
---- @param event signal<T...>
---- @return () -> (number, T...), D -- iterator and disconnector
-local function collect<D, T...>(event: signal_like<D, T...>): (() -> (number, T...), D)
+--- Expects signals to have a `Connect` or `connect` ***method***.
+local function collect<D, T...>(event: SignalLike<D, T...>): (() -> (number, T...), D)
     local storage = {}
     local mt = {}
     local iter = function()
@@ -53,11 +40,11 @@ local function collect<D, T...>(event: signal_like<D, T...>): (() -> (number, T.
         return function(): (number?, T...)
             if n <= 0 then
                 mt.__iter = nil
-                return nil
+                return nil :: any
             end
 
             n -= 1
-            return n + 1, unpack(table.remove(storage, 1) :: any)
+            return n + 1, unpack(table.remove(storage, 1) :: any) :: any
         end
     end
 

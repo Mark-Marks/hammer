@@ -1,18 +1,18 @@
 [package]
-name = "mark-marks/jecs-utils"
-version = "0.1.7-rc.1"
+name = "mark-marks/hammer"
+version = "0.2.0"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 license = "MIT"
 exclude = ["**"]
 include = [
     "default.project.json",
-    "dist",
-    "dist/**",
+    "lib",
+    "lib/**",
     "LICENSE",
     "wally.toml",
     "README.md",
 ]
 
 [dependencies]
-jecs = "ukendio/jecs@0.4.0"
+jecs = "ukendio/jecs@0.5.5"
