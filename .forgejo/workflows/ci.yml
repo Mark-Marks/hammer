@@ -58,12 +58,15 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Check code style
-        uses: https://github.com/JohnnyMorganz/stylua-action@v4
+      - name: Install Rokit
+        uses: https://github.com/CompeyDev/setup-rokit@v0.1.2
         with:
           token: ${{ secrets.githubtoken }}
-          version: v2.1.0
-          args: --check lib/
+
+      # Forgejo doesn't play nice with the stylua action for some reason
+      - name: Check Code Style
+        run: |
+          stylua --check lib/
 
   test:
     name: Unit Testing
