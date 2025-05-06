@@ -48,7 +48,7 @@ jobs:
           path: build
 
       - name: Create Release
-        uses: actions/forgejo-release@v2.6
+        uses: actions/forgejo-release@v2.6.0
         with:
           direction: upload
           title: Hammer ${{ github.ref_name }}
