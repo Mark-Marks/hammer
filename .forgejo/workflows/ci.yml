@@ -90,6 +90,7 @@ jobs:
           pesde install
 
       - name: Run Unit Tests
+        shell: bash
         run: |
           output=$(luau test/tests.luau)
           echo "$output"
