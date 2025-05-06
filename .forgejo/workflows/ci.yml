@@ -78,7 +78,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Luau
-        uses: https://github.com/EncodedVenom/install-luau@v4
+        uses: marked/install-luau@v4
+        with:
+          token: ${{ secrets.githubttoken }}
 
       - name: Install Rokit
         uses: https://github.com/CompeyDev/setup-rokit@v0.1.2
