@@ -13,6 +13,10 @@ A set of utilities for [Jecs](https://github.com/ukendio/jecs)
 
 </div>
 
+## Mirror
+
+This is a readonly mirror of [hammer](https://git.devmarked.win/marked/hammer).
+
 ## Installation
 
 Hammer is available on pesde @ `marked/hammer` and Wally @ `mark-marks/hammer`.
