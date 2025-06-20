@@ -41,7 +41,7 @@ local function observers_new(world, query, callback)
     end
 
     local entity_index = world.entity_index :: any
-    local function emplaced(entity, id, value)
+    local function emplaced(entity)
         local r = jecs.entity_index_try_get_fast(entity_index, entity :: any)
 
         if not r then
@@ -58,50 +58,6 @@ local function observers_new(world, query, callback)
     for _, term in terms do
         world:added(term, emplaced)
         world:changed(term, emplaced)
-    end
-end
-
-local function join(world, component)
-    local sparse_array = {}
-    local dense_array = {}
-    local values = {}
-    local max_id = 0
-
-    world:added(component, function(entity, id, value)
-        max_id += 1
-        sparse_array[entity] = max_id
-        dense_array[max_id] = entity
-        values[max_id] = value
-    end)
-
-    world:removed(component, function(entity, id)
-        local e_swap = dense_array[max_id]
-        local v_swap = values[max_id]
-
-        local dense = sparse_array[entity]
-        dense_array[dense] = e_swap
-        values[dense] = v_swap
-
-        sparse_array[entity] = nil
-        dense_array[max_id] = nil
-        values[max_id] = nil
-        max_id -= 1
-    end)
-
-    world:changed(component, function(entity, id, value)
-        values[sparse_array[entity]] = value
-    end)
-
-    return function()
-        local i = max_id
-        return function(): ...any
-            i -= 1
-            if i == 0 then
-                return nil
-            end
-            local e = dense_array[i]
-            return e, values[i]
-        end
     end
 end
 
@@ -128,7 +84,7 @@ local function monitors_new(world, query, callback)
         end
     end
 
-    local function removed(entity: jecs.Entity, component: jecs.Id)
+    local function removed(entity: jecs.Entity)
         local r = jecs.entity_index_try_get_fast(entity_index, entity :: any)
 
         if not r then
