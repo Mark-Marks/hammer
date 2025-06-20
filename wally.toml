@@ -1,6 +1,6 @@
 [package]
 name = "mark-marks/hammer"
-version = "0.2.0"
+version = "0.2.1"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 license = "MIT"
@@ -15,4 +15,4 @@ include = [
 ]
 
 [dependencies]
-jecs = "ukendio/jecs@0.5.5"
+jecs = "ukendio/jecs@0.6.1"

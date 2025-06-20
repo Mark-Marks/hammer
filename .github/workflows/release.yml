@@ -73,6 +73,9 @@ jobs:
       - name: Wally Publish
         run: wally publish
 
+      - name: Create Pesde Config Folder
+        run: mkdir ~/.pesde
+
       - name: Pesde Login
         run: pesde auth login --token "${{ secrets.PESDE_AUTH_TOKEN }}"
 
