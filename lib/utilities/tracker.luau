@@ -1,14 +1,11 @@
 --!strict
 --!optimize 2
+local add_observers = require("./observers")
 local command_buffer = require("./command_buffer")
 local jecs = require("../../jecs")
 type Entity<T = unknown> = jecs.Entity<T>
 type Id<T = unknown> = jecs.Id<T>
 type i53 = number
-
-local OnAdd = jecs.OnAdd
-local OnSet = jecs.OnSet
-local OnRemove = jecs.OnRemove
 
 local construct_ref = require("./ref")
 
@@ -68,6 +65,7 @@ local function insert_unique<T, V>(container: T, value: V, lookup: { [V]: number
     table.insert(container, value)
 end
 
+--- This function modifies the world to use observers.
 local function construct(world: jecs.World, ...: Entity<any>): Identity
     local components = { ... }
     local ref = construct_ref(world, true)
@@ -82,19 +80,43 @@ local function construct(world: jecs.World, ...: Entity<any>): Identity
     local snapshot_set: Set = {}
     local snapshot_removed: Removed = {}
 
+    world = add_observers(world) :: add_observers.PatchedWorld
+
     for _, component in components do
-        world:set(component, OnAdd, function(entity: Entity)
-            local snapshot = get_non_nilable(snapshot_added, component)
-            insert_unique(snapshot, entity)
+        world:added(component, function(entity, _, value)
+            if (value :: any) == nil then
+                local snapshot = get_non_nilable(snapshot_added, component)
+                insert_unique(snapshot, entity)
 
-            local state = get_non_nilable(state_added, component)
-            local lookup = get_non_nilable(state_added_lookup, component)
-            insert_unique(state, entity, lookup)
+                local state = get_non_nilable(state_added, component)
+                local lookup = get_non_nilable(state_added_lookup, component)
+                insert_unique(state, entity, lookup)
 
-            -- Clean up previous operations
-            local set_state = state_set[component]
-            if set_state and set_state[entity] then
-                set_state[entity] = nil
+                -- Clean up previous operations
+                local set_state = state_set[component]
+                if set_state and set_state[entity] then
+                    set_state[entity] = nil
+                end
+            else
+                local set_snapshot = get_non_nilable(snapshot_set, component)
+                set_snapshot[entity] = value
+
+                local set_state = get_non_nilable(state_set, component)
+                set_state[entity] = value
+
+                -- Clean up previous operations
+                local added_lookup = state_added_lookup[component]
+                if added_lookup then
+                    local idx = added_lookup[entity]
+                    if idx then
+                        added_lookup[entity] = nil
+                        local added_state = state_added[component]
+                        if added_state then
+                            -- Shifting around the array could get expensive, prefer `array[idx] = nil`
+                            added_state[idx] = nil
+                        end
+                    end
+                end
             end
 
             local removed_lookup = state_removed_lookup[component]
@@ -111,7 +133,7 @@ local function construct(world: jecs.World, ...: Entity<any>): Identity
             end
         end)
 
-        world:set(component, OnSet, function(entity, value)
+        world:changed(component, function(entity, _, value)
             local snapshot = get_non_nilable(snapshot_set, component)
             snapshot[entity] = value
 
@@ -146,7 +168,7 @@ local function construct(world: jecs.World, ...: Entity<any>): Identity
             end
         end)
 
-        world:set(component, OnRemove, function(entity: Entity)
+        world:removed(component, function(entity: Entity)
             local snapshot = get_non_nilable(snapshot_removed, component)
             insert_unique(snapshot, entity)
 

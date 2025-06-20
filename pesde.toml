@@ -1,5 +1,5 @@
 name = "marked/hammer"
-version = "0.2.0"
+version = "0.2.1"
 description = "A set of utilities for Jecs"
 authors = ["marked"]
 repository = "https://git.devmarked.win/marked/hammer"
@@ -14,5 +14,4 @@ lib = "lib/init.luau"
 default = "https://github.com/pesde-pkg/index"
 
 [dependencies]
-# `marked/jecs@0.5.5` was yanked due to some issues, this is the equivalent
-jecs = { name = "marked/jecs_nightly", version = "=0.5.5-nightly.20250312T202956Z" }
+jecs = { name = "marked/jecs", version = "0.6.1" }

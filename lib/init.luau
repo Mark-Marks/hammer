@@ -14,9 +14,13 @@ export type TrackerCommands = tracker.Commands
 local command_buffer = require("@self/utilities/command_buffer")
 export type CommandBuffer = command_buffer.Identity
 
+local add_observers = require("@self/utilities/observers")
+export type ObserverPatchedWorld = add_observers.PatchedWorld
+
 return {
     collect = collect,
     ref = ref,
     tracker = tracker,
     command_buffer = command_buffer,
+    add_observers = add_observers,
 }

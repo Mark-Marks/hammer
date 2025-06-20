@@ -37,7 +37,7 @@ end)
 
 TEST("hammer.ref()", function()
     do CASE "set_ref"
-        local world = jecs.World.new()
+        local world = jecs.world()
         local ref = make_ref(world, true)
 
         local a = ref(1234)
@@ -46,7 +46,7 @@ TEST("hammer.ref()", function()
     end
 
     do CASE "find"
-        local world = jecs.World.new()
+        local world = jecs.world()
         local ref = make_ref(world, true)
 
         local a = ref(1234)
@@ -55,7 +55,7 @@ TEST("hammer.ref()", function()
     end
 
     do CASE "cleaner"
-        local world = jecs.World.new()
+        local world = jecs.world()
         local ref = make_ref(world, true)
 
         local a, clean = ref(1234)
@@ -65,7 +65,7 @@ TEST("hammer.ref()", function()
     end
 
     do CASE "caching"
-        local world = jecs.World.new()
+        local world = jecs.world()
         local ref_a = make_ref(world)
         local ref_b = make_ref(world)
         CHECK(ref_a == ref_b)
@@ -77,7 +77,7 @@ end)
 -- TODO! write extensive tests for state operation cleaning
 TEST("hammer.tracker()", function()
     do CASE "snapshot"
-        local world = jecs.World.new()
+        local world = jecs.world()
         local tag = world:entity()
         local component = world:component() :: Entity<number>
 
@@ -93,7 +93,7 @@ TEST("hammer.tracker()", function()
         CHECK(snapshot ~= nil)
         assert(snapshot) -- Refinements
 
-        local world2 = jecs.World.new()
+        local world2 = jecs.world()
         local component2 = world2:component() :: Entity<number>
         local tag2 = world2:entity()
 
@@ -106,7 +106,7 @@ TEST("hammer.tracker()", function()
     end
 
     do CASE "state"
-        local world = jecs.World.new()
+        local world = jecs.world()
         local tag = world:entity()
         local component = world:component() :: Entity<number>
 
@@ -121,7 +121,7 @@ TEST("hammer.tracker()", function()
         local state = tracker.state()
         CHECK(state ~= nil)
 
-        local world2 = jecs.World.new()
+        local world2 = jecs.world()
         local component2 = world2:component() :: Entity<number>
         local tag2 = world2:entity()
 
@@ -134,7 +134,7 @@ TEST("hammer.tracker()", function()
     end
 
     do CASE "simplifying"
-        local world = jecs.World.new()
+        local world = jecs.world()
         local component = world:component() :: Entity<number>
 
         local entity = world:entity()
@@ -179,7 +179,7 @@ end)
 
 TEST("hammer.command_buffer()", function()
     do CASE "add"
-        local world = jecs.World.new()
+        local world = jecs.world()
         local command_buffer = make_command_buffer(world)
 
         local tag = world:entity()
@@ -194,7 +194,7 @@ TEST("hammer.command_buffer()", function()
     end
 
     do CASE "set"
-        local world = jecs.World.new()
+        local world = jecs.world()
         local command_buffer = make_command_buffer(world)
 
         local component = world:component()
@@ -209,7 +209,7 @@ TEST("hammer.command_buffer()", function()
     end
 
     do CASE "remove"
-        local world = jecs.World.new()
+        local world = jecs.world()
         local command_buffer = make_command_buffer(world)
 
         local component = world:component()
@@ -225,7 +225,7 @@ TEST("hammer.command_buffer()", function()
     end
 
     do CASE "delete"
-        local world = jecs.World.new()
+        local world = jecs.world()
         local command_buffer = make_command_buffer(world)
 
         local entity = world:entity()
@@ -237,7 +237,7 @@ TEST("hammer.command_buffer()", function()
     end
 
     do CASE "peek"
-        local world = jecs.World.new()
+        local world = jecs.world()
         local command_buffer = make_command_buffer(world)
 
         local tag1 = world:entity()
