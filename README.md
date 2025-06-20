@@ -87,7 +87,7 @@ In case you need an unique reference store, you can omit the cache via `ref(worl
 
 ### tracker
 
-A [tracker](/lib/utilities/tracker) keeps a history of all components passed to it, and how to get to their current state in the least amount of commands.\
+A [tracker](/lib/utilities/tracker.luau) keeps a history of all components passed to it, and how to get to their current state in the least amount of commands.\
 They're great for replicating world state across a networking barrier, as you're able to easily get diffed snapshots and apply them.
 ```luau
 local tracker = hammer.tracker(world, ComponentA, ComponentB)
@@ -114,7 +114,7 @@ Trackers are optimized under the hood with lookup tables for arrays, to allow fo
 
 ## observers
 
-[Observers](/lib/utilities/observers) allow for listening to component additions, changes and removals in multiple places. They replace hooks, which are single use.
+[Observers](/lib/utilities/observers.luau) allow for listening to component additions, changes and removals in multiple places. They replace hooks, which are single use.
 
 ```luau
 local world = hammer.add_observers(jecs.world())
