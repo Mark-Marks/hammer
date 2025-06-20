@@ -10,6 +10,7 @@ local collect = hammer.collect
 local make_tracker = hammer.tracker
 local make_ref = hammer.ref
 local make_command_buffer = hammer.command_buffer
+local add_observers = hammer.add_observers
 
 local signal = require("./signal")
 
@@ -262,6 +263,148 @@ TEST("hammer.command_buffer()", function()
         CHECK(table.find(commands.delete, entity4))
         CHECK(commands.deletion_lookup[entity4] == true)
     end
+end)
+
+-- https://github.com/Ukendio/jecs/blob/main/test/addons/observers.luau
+--[[
+    MIT License
+
+    Copyright (c) 2024 jecs authors
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+]]
+TEST("hammer.add_observers()", function()
+    local world = add_observers(jecs.world())
+
+	do CASE "Should work even if set after the component has been used"
+		local A = world:component()
+
+		world:set(world:entity(), A, 2)
+		local ran = false
+		world:added(A, function()
+			ran = true
+		end)
+
+		local entity = world:entity()
+		world:set(entity, A, 3)
+
+		CHECK(ran)
+	end
+
+	do CASE "Should not override hook"
+		local A = world:component()
+
+		local count = 1
+		local function counter()
+			count += 1
+		end
+
+		world:set(A, jecs.OnAdd, counter)
+		world:added(A, counter)
+		world:set(world:entity(), A, false)
+		CHECK(count == (1 + 2))
+		world:set(world:entity(), A, false)
+
+		CHECK(count == (1 + (2 * 2)))
+	end
+
+	do CASE "Ensure ordering between signals and observers"
+		local A = world:component()
+		local B = world:component()
+
+		local count = 1
+		local function counter()
+			count += 1
+		end
+
+		world:observer(world:query(A, B), counter)
+
+		world:added(A, counter)
+		world:added(A, counter)
+
+		local e = world:entity()
+		world:add(e, A)
+		CHECK(count == 3)
+
+		world:add(e, B)
+		CHECK(count == 4)
+	end
+
+	do CASE "Rematch entities in observers"
+		local A = world:component()
+
+		local count = 1
+		local function counter()
+			count += 1
+		end
+
+		world:observer(world:query(A), counter)
+
+		local e = world:entity()
+		world:set(e, A, false)
+		CHECK(count == 2)
+		world:remove(e, A)
+		CHECK(count == 2)
+		world:set(e, A, false)
+		CHECK(count == 3)
+		world:set(e, A, false)
+		CHECK(count == 4)
+	end
+
+	do CASE "Don't report changed components in monitor"
+		local A = world:component()
+		local count = 1
+		local function counter()
+			count += 1
+		end
+
+		world:monitor(world:query(A), counter)
+
+		local e = world:entity()
+		world:set(e, A, false)
+		CHECK(count == 2)
+		world:remove(e, A)
+		CHECK(count == 3)
+		world:set(e, A, false)
+		CHECK(count == 4)
+		world:set(e, A, false)
+		CHECK(count == 4)
+	end
+
+	do CASE "Call off pairs"
+		local A = world:component()
+
+		local callcount = 1
+		world:added(A, function(entity)
+			callcount += 1
+		end)
+		world:added(A, function(entity)
+			callcount += 1
+		end)
+
+		local e = world:entity()
+		local e2 = world:entity()
+
+		world:add(e2, jecs.pair(A, e))
+		world:add(e, jecs.pair(A, e2))
+		CHECK(callcount == 1 + 2 * 2)
+	end
 end)
 
 FINISH()
