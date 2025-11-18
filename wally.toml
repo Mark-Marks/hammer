@@ -12,6 +12,7 @@ include = [
     "LICENSE",
     "wally.toml",
     "README.md",
+    "CHANGELOG.md"
 ]
 
 [dependencies]

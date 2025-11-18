@@ -4,7 +4,7 @@ description = "A set of utilities for Jecs"
 authors = ["marked"]
 repository = "https://github.com/Mark-Marks/hammer"
 license = "MIT"
-includes = ["lib", "lib/**", "LICENSE", "pesde.toml", "README.md", "jecs.luau"]
+includes = ["lib", "lib/**", "LICENSE", "pesde.toml", "README.md", "CHANGELOG.md", "jecs.luau"]
 
 [engines]
 pesde = "^0.7.1"
