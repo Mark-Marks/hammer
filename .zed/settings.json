@@ -7,41 +7,66 @@
     "luau-lsp": {
       "settings": {
         "luau-lsp": {
-          "diagnostics": {
-            "workspace": false
-          },
           "completion": {
             "imports": {
               "enabled": true,
-              "suggestServices": true,
               "suggestRequires": true,
               "stringRequires": {
                 "enabled": true
-              }
+              },
+              "ignoreGlobs": ["roblox_packages/.pesde/**"]
             }
           },
-          "require": {
-            "mode": "relativeToFile"
-          }
+          "ignoreGlobs": ["types/**", "scripts/**"]
         },
         "ext": {
+          "definitions": ["./types/zune.d.luau"],
+          "documentation": ["./types/zune.d.json"],
+          "fflags": {
+            "enable_new_solver": true
+          },
           "roblox": {
             "enabled": false,
             "security_level": "roblox_script"
-          },
-          "fflags": {
-            "enable_new_solver": true,
-            "sync": true,
-            "enable_by_default": false
           },
           "binary": {
             "ignore_system_version": false
           }
         }
       }
+    },
+    "json-language-server": {
+      "settings": {
+        "json": {
+          "schemas": [
+            {
+              "fileMatch": ["*/.luaurc"],
+              "url": "https://raw.githubusercontent.com/JohnnyMorganz/luau-lsp/refs/heads/main/editors/code/schemas/luaurc.json"
+            },
+            {
+              "fileMatch": ["*.project.json"],
+              "url": "https://raw.githubusercontent.com/rojo-rbx/vscode-rojo/refs/heads/master/schemas/project.template.schema.json"
+            }
+          ]
+        }
+      }
     }
   },
   "file_types": {
-    "Luau": ["lua"]
-  }
+    "Luau": ["lua"],
+    "JSON": [".luaurc"]
+  },
+  "languages": {
+    "Luau": {
+      "formatter": {
+        "external": {
+          "command": "stylua",
+          "arguments": ["--respect-ignores", "-"]
+        }
+      },
+      "format_on_save": "on"
+    }
+  },
+  // Eat shit and die AI features
+  "disable_ai": true
 }

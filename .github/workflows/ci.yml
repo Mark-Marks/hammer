@@ -22,7 +22,7 @@ jobs:
 
       - name: Build
         run: |
-          lune run build
+          zune run scripts/build
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
@@ -69,11 +69,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install Luau
-        uses: EncodedVenom/install-luau@v4.3
-        with:
-          version: "0.678"
-
       - name: Install Rokit
         uses: CompeyDev/setup-rokit@v0.1.2
         with:
@@ -85,9 +80,9 @@ jobs:
 
       - name: Run Unit Tests
         run: |
-          output=$(luau test/tests.luau)
+          output=$(zune test tests/suite.luau)
           echo "$output"
-          if [[ "$output" == *"0 fails"* ]]; then
+          if [[ "$output" != *"failed"* ]]; then
             echo "Unit Tests Passed"
           else
             echo "Error: One or More Unit Tests Failed."

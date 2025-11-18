@@ -1,18 +1,16 @@
 --!strict
 --!optimize 2
 local jecs = require("../../jecs")
-type Entity<T = unknown> = jecs.Entity<T>
+type Entity<T = any> = jecs.Entity<T>
 
-export type Identity = typeof(setmetatable(
-    {},
-    {} :: {
-        __call: <T>(any, key: unknown) -> (Entity<T>, Cleaner),
-        __index: {
-            reference: <T>(key: unknown) -> (Entity<T>, Cleaner),
-            find: <T>(key: unknown) -> (Entity<T>?, Cleaner?),
-        },
-    }
-))
+export type Identity = setmetatable<{}, {
+    __call: <T>(any, key: unknown) -> Entity<T>,
+    __index: {
+        reference: <T>(key: unknown) -> Entity<T>,
+        find: <T>(key: unknown) -> Entity<T>?,
+        delete: <T>(key: unknown) -> Entity<T>?,
+    },
+}>
 
 type Cleaner = () -> ()
 
@@ -27,43 +25,33 @@ local function construct(world: jecs.World, skip_cache: boolean?): Identity
     end
 
     local lookup: { [unknown]: Entity } = {}
-    local cleaner_cache: { [unknown]: Cleaner } = {}
 
-    local function serve_cleaner(key: unknown): () -> ()
-        local hit = cleaner_cache[key]
-        if hit then
-            return hit
-        end
-
-        local function cleaner()
-            lookup[key] = nil
-            cleaner_cache[key] = nil
-        end
-        cleaner_cache[key] = cleaner
-
-        return cleaner
-    end
-
-    local function ref<T>(key: unknown): (Entity<T>, Cleaner)
+    local function ref<T>(key: unknown): Entity<T>
         local entity = lookup[key]
         if not entity then
             entity = world:entity()
             lookup[key] = entity
         end
 
-        return entity, serve_cleaner(key)
+        return entity
     end
 
-    local function find<T>(key: unknown): (Entity<T>?, Cleaner?)
+    local function find<T>(key: unknown): Entity<T>?
         local entity = lookup[key]
         if not entity then
-            return nil, nil
+            return nil
         end
 
-        return entity, serve_cleaner(key)
+        return entity
     end
 
-    local function call<T>(_, key: unknown): (Entity<T>, Cleaner)
+    local function delete<T>(key: unknown): Entity<T>?
+        local entity = lookup[key]
+        lookup[key] = nil
+        return entity
+    end
+
+    local function call<T>(_, key: unknown): Entity<T>
         return ref(key)
     end
 
@@ -72,6 +60,7 @@ local function construct(world: jecs.World, skip_cache: boolean?): Identity
         __index = {
             reference = ref,
             find = find,
+            delete = delete,
         },
     })
 

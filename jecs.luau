@@ -1,13 +1,24 @@
 --!strict
 --!native
 --!optimize 2
--- pesde adds dependencies by including a folder with them in the package
--- wally just adds a file for each dependency
--- this is here to mitigate that
+-- Pesde adds dependencies by including a folder with them in the package
+-- Wally just adds a file for each dependency
+-- This is here to mitigate that, acting as another linker file
 local jecs = require("./luau_packages/jecs")
 export type Archetype = jecs.Archetype
-export type Id<T = unknown> = jecs.Id<T>
-export type Pair<First, Second> = jecs.Pair<First, Second>
-export type Entity<T = unknown> = jecs.Entity<T>
+export type QueryInner = jecs.QueryInner
+export type Entity<T = any> = jecs.Entity<T>
+export type Id<T = any> = jecs.Id<T>
+export type Pair<P, O> = jecs.Pair<P, O>
+export type Item<T...> = jecs.Item<T...>
+export type Iter<T...> = jecs.Iter<T...>
+export type Query<T...> = jecs.Query<T...>
+export type Observer = jecs.Observer
+export type observer = jecs.observer
 export type World = jecs.World
+export type Record = jecs.Record
+export type ComponentRecord = jecs.ComponentRecord
+export type ComponentIndex = jecs.ComponentIndex
+export type Archetypes = jecs.Archetypes
+export type EntityIndex = jecs.EntityIndex
 return jecs

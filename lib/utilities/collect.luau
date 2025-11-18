@@ -1,62 +1,99 @@
---!strict
+--!nonstrict
 --!optimize 2
---[[
-original author by @memorycode
 
-MIT License
-
-Copyright (c) 2024 Michael
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
---]]
-
---- What signals passed to `collect()` should be able to be coerced into
-export type SignalLike<D, T...> = { connect: Connector<D, T...>, [any]: any } | { Connect: Connector<D, T...>, [any]: any }
-type Connector<D, T...> = (self: SignalLike<D, T...>, (T...) -> ()) -> D
-
---- Collects all arguments fired through the given signal, and drains the collection on iteration.\
---- Expects signals to have a `Connect` or `connect` ***method***.
-local function collect<D, T...>(event: SignalLike<D, T...>): (() -> (number, T...), D)
+--- Collects events into a flushable queue.
+--- Supports signals which are functions or have `:connect` or `:Connect` methods, and supports callbacks, `:disconnect`, `:Disconnect`, `:destroy` and `:Destroy` for cleanup.
+--- Example usage:
+--- ```luau
+--- local players_added = hammer.collect(Players.PlayerAdded)
+--- local function system()
+---     for i, player in players_added do
+---         ...
+---     end
+--- end
+--- ```
+local function collect(event)
     local storage = {}
-    local mt = {}
-    local iter = function()
-        local n = #storage
-        return function(): (number?, T...)
-            if n <= 0 then
-                mt.__iter = nil
-                return nil :: any
-            end
 
-            n -= 1
-            return n + 1, unpack(table.remove(storage, 1) :: any) :: any
+    local i = 0
+    local function connector(...)
+        table.insert(storage, { ... })
+        i += 1
+    end
+
+    local n = 0
+    local function iter()
+        if n == i then
+            n, i = 0, 0
+            return
+        end
+        n += 1
+
+        local args = table.remove(storage, 1)
+        return n, unpack(args)
+    end
+
+    local disconnect
+    if typeof(event) == "table" then
+        local connect = event.connect or event.Connect
+        disconnect = connect(event, connector)
+    else
+        disconnect = event(connector)
+    end
+
+    local function cleanup()
+        if not disconnect then
+            return
+        end
+
+        if typeof(disconnect) == "function" then
+            disconnect()
+        elseif typeof(disconnect) == "table" then
+            if disconnect.disconnect then
+                disconnect:disconnect()
+            elseif disconnect.Disconnect then
+                disconnect:Disconnect()
+            elseif disconnect.destroy then
+                disconnect:destroy()
+            elseif disconnect.Destroy then
+                disconnect:Destroy()
+            end
+        elseif typeof(disconnect) == "RBXScriptConnection" then
+            disconnect:Disconnect()
         end
     end
 
-    local connect = event.Connect or event.connect
-    assert(connect ~= nil, "Signal is missing a Connect function - is it really a signal?")
-    local disconnect = connect(event, function(...)
-        table.insert(storage, { ... })
-        mt.__iter = iter :: any
-    end)
-
-    setmetatable(storage, mt)
-    return storage :: any, disconnect
+    return iter, cleanup
 end
 
-return collect
+type Iterator<T...> = () -> (number, T...)
+type Connectable<T...> = (T...) -> ()
+type Cleanup = () -> ()
+
+-- stylua: ignore
+return collect ::
+    & (
+        <R, T...>(
+            (Connectable<T...>) -> R
+        ) -> (Iterator<T...>, Cleanup)
+    ) & (
+        <S, R, T...>(S & {
+            connect: (S, Connectable<T...>) -> R,
+        }) -> (Iterator<T...>, Cleanup)
+    ) & (
+        <S, R, T...>(S & {
+            Connect: (S, Connectable<T...>) -> R,
+        }) -> (Iterator<T...>, Cleanup)
+    ) & (
+        <T...>(
+            (Connectable<T...>) -> ()
+        ) -> (Iterator<T...>, Cleanup)
+    ) & (
+        <S, T...>(S & {
+            connect: (S, Connectable<T...>) -> (),
+        }) -> (Iterator<T...>, Cleanup)
+    ) & (
+        <S, T...>(S & {
+            Connect: (S, Connectable<T...>) -> (),
+        }) -> (Iterator<T...>, Cleanup)
+    )

@@ -1,23 +1,23 @@
 --!strict
 --!optimize 2
 local jecs = require("../../jecs")
-type Entity<T = unknown> = jecs.Entity<T>
-type Id<T = unknown> = jecs.Id<T>
+type Entity<T = any> = jecs.Entity<T>
+type Id<T = any> = jecs.Id<T>
 type World = jecs.World
 
 export type Identity = {
-    --- Execute all commands and clear the buffer
+    --- Execute all commands and clear the buffer.
     flush: () -> (),
-    --- Peeks into the commands currently stored by the buffer
+    --- Peeks into the commands currently stored by the buffer.
     peek: () -> Commands,
 
-    --- Adds a component to the entity with no value
+    --- Adds a component to the entity with no value.
     add: <T>(entity: Entity, component: Id<T>) -> (),
-    --- Assigns a value to a component on the given entity
+    --- Assigns a value to a component on the given entity.
     set: <T>(entity: Entity, component: Id<T>, data: T) -> (),
-    --- Removes a component from the given entity
+    --- Removes a component from the given entity.
     remove: <T>(entity: Entity, component: Id<T>) -> (),
-    --- Deletes an entity and all it's related components and relationships
+    --- Deletes an entity and all it's related components and relationships.
     delete: (entity: Entity) -> (),
 }
 
@@ -35,7 +35,7 @@ local function construct(world: World): Identity
     local set_commands: { [Id]: { [Entity]: unknown } } = {}
     local remove_commands: { [Id]: { Entity } } = {}
     local delete_commands: { Entity } = {}
-    -- Double memory usage for deletions but preserve order while keeping O(1) performance for lookups
+    -- Double memory usage for deletions but preserve order while keeping constant time lookups
     local deletion_lookup: { [Entity]: true } = {}
 
     local function flush()
@@ -92,33 +92,33 @@ local function construct(world: World): Identity
     end
 
     local function add<T>(entity: Entity, component: Id<T>)
-        local cmds = add_commands[component]
-        if not cmds then
-            cmds = {}
-            add_commands[component] = cmds
+        local commands = add_commands[component]
+        if not commands then
+            commands = {}
+            add_commands[component] = commands
         end
 
-        table.insert(cmds, entity)
+        table.insert(commands, entity)
     end
 
     local function set<T>(entity: Entity, component: Id<T>, data: T)
-        local cmds = set_commands[component]
-        if not cmds then
-            cmds = {}
-            set_commands[component] = cmds
+        local commands = set_commands[component]
+        if not commands then
+            commands = {}
+            set_commands[component] = commands
         end
 
-        cmds[entity] = data
+        commands[entity] = data
     end
 
     local function remove<T>(entity: Entity, component: Id<T>)
-        local cmds = remove_commands[component]
-        if not cmds then
-            cmds = {}
-            remove_commands[component] = cmds
+        local commands = remove_commands[component]
+        if not commands then
+            commands = {}
+            remove_commands[component] = commands
         end
 
-        table.insert(cmds, entity)
+        table.insert(commands, entity)
     end
 
     local function delete(entity: Entity)

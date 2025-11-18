@@ -1,8 +1,6 @@
 name: Release
 
 on:
-  push:
-    tags: ["v*"]
   workflow_dispatch:
 
 jobs:
@@ -20,7 +18,7 @@ jobs:
 
       - name: Build
         run: |
-          lune run build
+          zune run build
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
@@ -72,9 +70,6 @@ jobs:
 
       - name: Wally Publish
         run: wally publish
-
-      - name: Create Pesde Config Folder
-        run: mkdir ~/.pesde
 
       - name: Pesde Login
         run: pesde auth login --token "${{ secrets.PESDE_AUTH_TOKEN }}"

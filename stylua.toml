@@ -1,4 +1,5 @@
-column_width = 120
+syntax = "Luau"
+column_width = 80
 line_endings = "Unix"
 indent_type = "Spaces"
 indent_width = 4
