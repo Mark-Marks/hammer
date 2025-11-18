@@ -60,3 +60,5 @@ globalTypes.d.luau
 jecs_src.luau
 # Stores Github PAT
 .env
+hammer-*.tar
+hammer-*.zip

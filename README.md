@@ -15,7 +15,8 @@ A set of utilities for [Jecs](https://github.com/ukendio/jecs)
 
 ## ⛓️‍💥 Installation
 
-Hammer is available on pesde @ `marked/hammer` and Wally @ `mark-marks/hammer`.
+Hammer is available on pesde @ `marked/hammer` and Wally @ `mark-marks/hammer`.\
+For standalone installation using the automatically built `rbxm`, make sure to replace all instances of `../../jecs` in the utilities with a path to a Jecs module.
 
 ## 📄 Changelog
 
