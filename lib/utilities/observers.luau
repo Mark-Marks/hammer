@@ -74,7 +74,7 @@ local function observers_new<T...>(
         archetypes[archetype.id] = true
     end
 
-    local function emplaced<a>(entity: jecs.Entity, id: jecs.Id<a>, value: a)
+    local function emplaced<a>(entity: jecs.Entity, _id: jecs.Id<a>, _value: a)
         local r = entity_index.sparse_array[jecs.ECS_ID(entity)]
 
         local archetype = r.archetype
@@ -164,8 +164,9 @@ local function observers_new<T...>(
 
         table.clear(archetypes)
 
-        for _, disconnect in cleanup do
-            disconnect()
+        -- selene: allow(shadowing)
+        for _, callback in cleanup do
+            callback()
         end
     end
 
@@ -205,7 +206,7 @@ local function monitors_new<T...>(query: Query<T...>): Monitor<T...>
     local callback_added: ((jecs.Entity) -> ())?
     local callback_removed: ((jecs.Entity) -> ())?
 
-    local function emplaced<a>(entity: jecs.Entity, id: jecs.Id<a>, value: a)
+    local function emplaced<a>(entity: jecs.Entity, _id: jecs.Id<a>, _value: a)
         if callback_added == nil then
             return
         end
@@ -220,7 +221,7 @@ local function monitors_new<T...>(query: Query<T...>): Monitor<T...>
         end
     end
 
-    local function removed(entity: jecs.Entity, component: jecs.Id)
+    local function removed(entity: jecs.Entity, _component: jecs.Id)
         if callback_removed == nil then
             return
         end
@@ -373,6 +374,7 @@ local function monitors_new<T...>(query: Query<T...>): Monitor<T...>
 
         table.clear(archetypes)
 
+        -- selene: allow(shadowing)
         for _, disconnect in cleanup do
             disconnect()
         end
