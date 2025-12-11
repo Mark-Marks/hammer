@@ -67,11 +67,21 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set Linker
+        run: |
+          mv jecs.luau pesde_linker.luau
+          mv wally_linker.luau jecs.luau
+
       - name: Wally Login
         run: wally login --token ${{ secrets.WALLY_AUTH_TOKEN }}
 
       - name: Wally Publish
         run: wally publish
+
+      - name: Set Linker
+        run: |
+          mv jecs.luau wally_linker.luau
+          mv pesde_linker.luau jecs.luau
 
       - name: Pesde Login
         run: pesde auth login --token "${{ secrets.PESDE_AUTH_TOKEN }}"
