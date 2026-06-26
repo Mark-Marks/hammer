@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated Jecs to v0.11.0
 
+### Fixed
+
+- mark-marks/hammer#2 - collect erroring for Roblox script signals
+
 ## [0.3.1] - 2025-12-11
 
 ### Fixed

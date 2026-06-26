@@ -37,6 +37,8 @@ local function collect(event)
     if typeof(event) == "table" then
         local connect = event.connect or event.Connect
         disconnect = connect(event, connector)
+    elseif typeof(event) == "RBXScriptSignal" then
+        disconnect = event:Connect(connector)
     else
         disconnect = event(connector)
     end
