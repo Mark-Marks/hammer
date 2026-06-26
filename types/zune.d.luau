@@ -10,8 +10,8 @@ export type SerdeJsonDecodeConfig = {
 type YamlInput = string | number | boolean | {
     [string]: YamlInput
 }
-type YamlOuput = string | {
-    [string]: YamlOuput
+type YamlOutput = string | {
+    [string]: YamlOutput
 }
 export type SerdeGenericCompressionOptions = {
     level: number?, 
@@ -56,7 +56,7 @@ export type _zune_serde_toml = {
 }
 export type _zune_serde_yaml = {
     encode: (object: YamlInput) -> string,
-    decode: (yaml: string | buffer) -> YamlOuput, 
+    decode: (yaml: string | buffer) -> YamlOutput, 
 }
 export type _zune_serde_base64 = {
     encode: 
@@ -65,6 +65,7 @@ export type _zune_serde_base64 = {
         & ((value: string | buffer) -> string | buffer),
     decode: 
         & ((base64: string) -> string)
+        & ((base64: buffer) -> buffer)
         & ((base64: string | buffer) -> string | buffer), 
 }
 export type _zune_serde_gzip = {
@@ -184,15 +185,15 @@ export type FileStat = {
 }
 declare class FileHandle
     read: 
-        & ((self: FileHandle, amount: number?) -> string)
-        & ((self: FileHandle, amount: number?, bytes: false?) -> string)
+        & ((self: FileHandle, amount: number?, bytes: nil) -> string)
+        & ((self: FileHandle, amount: number?, bytes: false) -> string)
         & ((self: FileHandle, amount: number?, bytes: true) -> buffer)
-        & ((self: FileHandle, amount: number?, bytes: boolean?) -> string | buffer)
+        & ((self: FileHandle, amount: number?, bytes: boolean) -> string | buffer)
     readSync: 
-        & ((self: FileHandle, amount: number?) -> string)
-        & ((self: FileHandle, amount: number?, bytes: false?) -> string)
+        & ((self: FileHandle, amount: number?, bytes: nil) -> string)
+        & ((self: FileHandle, amount: number?, bytes: false) -> string)
         & ((self: FileHandle, amount: number?, bytes: true) -> buffer)
-        & ((self: FileHandle, amount: number?, bytes: boolean?) -> string | buffer)
+        & ((self: FileHandle, amount: number?, bytes: boolean) -> string | buffer)
     write: (self: FileHandle, contents: string | buffer) -> ()
     writeSync: (self: FileHandle, contents: string | buffer) -> ()
     append: (self: FileHandle, contents: string | buffer) -> ()
@@ -240,13 +241,13 @@ export type _zune_fs = {
     createFile: (path: string, opts: FileCreateOptions?) -> FileHandle,
     openFile: (path: string, opts: FileOpenOptions?) -> FileHandle,
     readFile: 
-        & ((path: string) -> string)
-        & ((path: string, bytes: false?) -> string)
+        & ((path: string, bytes: nil) -> string)
+        & ((path: string, bytes: false) -> string)
         & ((path: string, bytes: true) -> buffer)
         & ((path: string, bytes: boolean) -> string | buffer),
     readFileSync: 
-        & ((path: string) -> string)
-        & ((path: string, bytes: false?) -> string)
+        & ((path: string, bytes: nil) -> string)
+        & ((path: string, bytes: false) -> string)
         & ((path: string, bytes: true) -> buffer)
         & ((path: string, bytes: boolean) -> string | buffer),
     entries: (path: string) -> {DirectoryEntry},
@@ -268,208 +269,54 @@ export type _zune_fs = {
     embeddedScripts: () -> {string},
     path: _zune_fs_path, 
 }
---[[ crypto ]]
-type Input = string | buffer
-declare class CryptoHash
-    digest: 
-        & ((self: CryptoHash) -> buffer)
-        & ((self: CryptoHash, encoding: "binary") -> buffer)
-        & ((self: CryptoHash, encoding: "hex" | "base64") -> string)
-        & ((self: CryptoHash, encoding: string) -> string | buffer)
-    update: (self: CryptoHash, value: string | buffer) -> ()
-    copy: (self: CryptoHash) -> CryptoHash 
-end
-declare class TlsCertBundle
-
-end
-declare class TlsCertKeyPair
-
-end
-export type CryptoHashAlgorithms = 
-    | "sha1"
-    | "md5"
-    | "blake3"
-    | "sha224"
-    | "sha256"
-    | "sha384"
-    | "sha512"
-    | "sha3_224"
-    | "sha3_256"
-    | "sha3_384"
-    | "sha3_512"
-    | "blake2b128"
-    | "blake2b160"
-    | "blake2b256"
-    | "blake2b384"
-    | "blake2b512"
-    | "blake2s128"
-    | "blake2s160"
-    | "blake2s224"
-    | "blake2s256"
-type BcryptPasswordOptions = {
-    algorithm: "bcrypt"?,
-    cost: number?, 
-}
-type Argon2PasswordOptions = {
-    algorithm: ("argon2d" | "argon2i" | "argon2id")?,
-    time_cost: number?,
-    memory_cost: number?,
-    threads: number?, 
-}
-export type CryptoPasswordOptions = BcryptPasswordOptions | Argon2PasswordOptions
-type EncryptedData = {
-    cipher: buffer,
-    tag: buffer, 
-}
-export type CryptoTlsClientConfig = {
-    host: string,
-    ca: TlsCertBundle, 
-}
-export type _zune_crypto_password = {
-    hash: (password: string | buffer, opts: CryptoPasswordOptions?) -> string,
-    verify: (password: string | buffer, hash: string | buffer) -> boolean, 
-}
-export type _zune_crypto_uuid = {
-    v4: () -> string,
-    v7: () -> string, 
-}
-export type _zune_crypto_random = {
-    nextNumber: 
-        & (() -> number)
-        & ((min: number, max: number) -> number),
-    nextInteger: 
-        & (() -> number)
-        & ((min: number, max: number) -> number),
-    nextBoolean: () -> boolean,
-    fill: (buffer: buffer, offset: number, length: number) -> (), 
-}
-export type _zune_crypto_aead = {
-    aes_gcm: {
-        Aes128Gcm: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        },
-        Aes256Gcm: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        }, 
-    },
-    aes_ocb: {
-        Aes128Ocb: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        },
-        Aes256Ocb: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        }, 
-    },
-    aegis: {
-        Aegis128X4: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        },
-        Aegis128X2: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        },
-        Aegis128L: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        },
-        Aegis256X4: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        },
-        Aegis256X2: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        },
-        Aegis256: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        },
-        Aegis128X4_256: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        },
-        Aegis128X2_256: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        },
-        Aegis128L_256: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        },
-        Aegis256X4_256: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        },
-        Aegis256X2_256: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        },
-        Aegis256_256: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        }, 
-    },
-    chacha_poly: {
-        ChaCha8Poly1305: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        },
-        ChaCha12Poly1305: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        },
-        ChaCha20Poly1305: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        },
-        XChaCha8Poly1305: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        },
-        XChaCha12Poly1305: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        },
-        XChaCha20Poly1305: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        }, 
-    },
-    salsa_poly: {
-        XSalsa20Poly1305: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        }, 
-    },
-    isap: {
-        IsapA128A: {
-            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
-            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
-        }, 
-    }, 
-}
-export type _zune_crypto_tls = {
-    bundleFromSystem: () -> TlsCertBundle,
-    bundleFromFile: (file: string) -> TlsCertBundle,
-    keyPairFromFile: (certFile: string, keyFile: string) -> TlsCertKeyPair,
-    setupClient: (socket: NetworkSocket, config: CryptoTlsClientConfig) -> (),
-    setupServer: (socket: NetworkSocket, config: CryptoTlsServerConfig) -> (), 
-}
-export type CryptoTlsServerConfig = {
-    auth: TlsCertKeyPair, 
-}
-export type _zune_crypto = {
-    createHash: (algorithm: CryptoHashAlgorithms, secret: string?) -> CryptoHash,
-    password: _zune_crypto_password,
-    uuid: _zune_crypto_uuid,
-    random: _zune_crypto_random,
-    aead: _zune_crypto_aead,
-    tls: _zune_crypto_tls, 
+--[[ mem ]]
+export type MemWritableSlice = buffer | FFIPointer
+export type MemReadableSlice = string | buffer | FFIPointer
+export type _zune_mem = {
+    MAX_SIZE: number,
+    len: (src: MemReadableSlice) -> number?,
+    copy: (dest: MemWritableSlice, destOffset: number, src: MemReadableSlice, srcOffset: number, count: number?) -> (),
+    slice: (src: MemReadableSlice, offset: number, count: number?) -> buffer,
+    eqlSlice: (a: MemReadableSlice, aOffset: number, b: MemReadableSlice, bOffset: number, count: number?) -> boolean,
+    eql: (a: MemReadableSlice, b: MemReadableSlice) -> boolean,
+    startsWith: (slice: MemReadableSlice, needle: MemReadableSlice) -> boolean,
+    endsWith: (slice: MemReadableSlice, needle: MemReadableSlice) -> boolean,
+    trim: (src: MemReadableSlice, values_to_strip: MemReadableSlice) -> buffer,
+    trimLeft: (src: MemReadableSlice, values_to_strip: MemReadableSlice) -> buffer,
+    trimRight: (src: MemReadableSlice, values_to_strip: MemReadableSlice) -> buffer,
+    find: (src: MemReadableSlice, needle: MemReadableSlice) -> number?,
+    findPos: (src: MemReadableSlice, offset: number, needle: MemReadableSlice) -> number?,
+    findLast: (src: MemReadableSlice, needle: MemReadableSlice) -> number?,
+    findScalar: (src: MemReadableSlice, char: number) -> number?,
+    findScalarPos: (src: MemReadableSlice, offset: number, char: number) -> number?,
+    findScalarLast: (src: MemReadableSlice, char: number) -> number?,
+    findAny: (src: MemReadableSlice, needle: MemReadableSlice) -> number?,
+    findAnyPos: (src: MemReadableSlice, offset: number, needle: MemReadableSlice) -> number?,
+    findAnyLast: (src: MemReadableSlice, needle: MemReadableSlice) -> number?,
+    findNone: (src: MemReadableSlice, needle: MemReadableSlice) -> number?,
+    findNonePos: (src: MemReadableSlice, offset: number, needle: MemReadableSlice) -> number?,
+    findNoneLast: (src: MemReadableSlice, needle: MemReadableSlice) -> number?,
+    findDiff: (src: MemReadableSlice, needle: MemReadableSlice) -> number?,
+    findDiffPos: (src: MemReadableSlice, offset: number, needle: MemReadableSlice) -> number?,
+    findMax: (src: MemReadableSlice, offset: number?, count: number?) -> number,
+    findMin: (src: MemReadableSlice, offset: number?, count: number?) -> number,
+    findMinMax: (src: MemReadableSlice, offset: number?, count: number?) -> (number, number),
+    cutPrefix: (src: MemReadableSlice, prefix: MemReadableSlice) -> buffer?,
+    cutSuffix: (src: MemReadableSlice, suffix: MemReadableSlice) -> buffer?,
+    cut: (src: MemReadableSlice, needle: MemReadableSlice) -> (buffer?, buffer?),
+    cutLast: (src: MemReadableSlice, needle: MemReadableSlice) -> (buffer?, buffer?),
+    cutScalar: (src: MemReadableSlice, char: number) -> (buffer?, buffer?),
+    cutScalarLast: (src: MemReadableSlice, char: number) -> (buffer?, buffer?),
+    replaceScalar: (src: MemWritableSlice, char: number, replacement: number, offset: number?, count: number?) -> (),
+    max: (src: MemReadableSlice, offset: number?, count: number?) -> number,
+    min: (src: MemReadableSlice, offset: number?, count: number?) -> number,
+    reverse: (src: MemWritableSlice, offset: number?, count: number?) -> (),
+    rotate: (src: MemWritableSlice, amount: number, offset: number?, count: number?) -> (),
+    set: (dest: MemWritableSlice, value: number, offset: number?, count: number?) -> (),
+    toVector2: (src: MemReadableSlice, offset: number?) -> vector,
+    toVector3: (src: MemReadableSlice, offset: number?) -> vector,
+    writeVector2: (dest: MemWritableSlice, offset: number?, vec: vector) -> (),
+    writeVector3: (dest: MemWritableSlice, offset: number?, vec: vector) -> (), 
 }
 --[[ thread ]]
 declare class Thread
@@ -568,9 +415,10 @@ export type _zune_process = {
     run: 
         & ((exec: string) -> ProcessRunResult<string>)
         & ((exec: string, args: {string}?) -> ProcessRunResult<string>)
-        & ((exec: string, args: {string}?, opts: ProcessOptions?, bytes: false?) -> ProcessRunResult<string?>)
+        & ((exec: string, args: {string}?, opts: ProcessOptions?, bytes: nil) -> ProcessRunResult<string?>)
+        & ((exec: string, args: {string}?, opts: ProcessOptions?, bytes: false) -> ProcessRunResult<string?>)
         & ((exec: string, args: {string}?, opts: ProcessOptions?, bytes: true) -> ProcessRunResult<buffer?>)
-        & ((exec: string, args: {string}?, opts: ProcessOptions?, bytes: boolean?) -> ProcessRunResult<string | buffer?>),
+        & ((exec: string, args: {string}?, opts: ProcessOptions?, bytes: boolean) -> ProcessRunResult<string | buffer?>),
     exit: (code: number) -> never,
     onSignal: (signal: "INT", callback: () -> ()) -> (), 
 }
@@ -676,7 +524,8 @@ export type _zune_testing = {
 export type LuauCompileOptions = {
     debug_level: number?,
     optimization_level: number?,
-    coverage_level: number?, 
+    coverage_level: number?,
+    type_info_level: number?, 
 }
 export type LuauLoadOptions = {
     env: {
@@ -835,7 +684,7 @@ export type HttpServerResponse = {
 export type ServerWebSocketHandlers = {
     upgrade: ((request: HttpServerRequest) -> boolean)?,
     open: ((websocket: HttpWebSocket) -> ())?,
-    message: ((websocket: HttpWebSocket, message: string) -> ())?,
+    message: ((websocket: HttpWebSocket, message: string | buffer) -> ())?,
     close: ((websocket: HttpWebSocket, code: number) -> ())?, 
 }
 export type HttpServeOptions = {
@@ -886,9 +735,8 @@ export type HttpWebSocketOptions = {
     protocols: {string}?,
     timeout: number?,
     accept: ((socket: HttpWebSocket, request: HttpServerResponse) -> boolean)?,
-    open: ((socket: HttpWebSocket) -> ())?,
-    close: ((socket: HttpWebSocket, close: number?) -> ())?,
-    message: ((socket: HttpWebSocket, message: string) -> ())?,
+    close: ((socket: HttpWebSocket, close: number) -> ())?,
+    message: ((socket: HttpWebSocket, message: string | buffer) -> ())?,
     tls: {
         host: string?,
         ca: TlsCertBundle?, 
@@ -1095,9 +943,10 @@ export type _zune_net_http = {
     serve: (opts: HttpServeOptions) -> HttpServer,
     request: 
         & ((host: string) -> HttpResponse<string>)
-        & ((host: string, opts: HttpRequestOptions?, bytes: false?) -> HttpResponse<string>)
+        & ((host: string, opts: HttpRequestOptions?, bytes: nil) -> HttpResponse<string>)
+        & ((host: string, opts: HttpRequestOptions?, bytes: false) -> HttpResponse<string>)
         & ((host: string, opts: HttpRequestOptions?, bytes: true) -> HttpResponse<buffer>)
-        & ((host: string, opts: HttpRequestOptions?, bytes: boolean?) -> HttpResponse<string | buffer>),
+        & ((host: string, opts: HttpRequestOptions?, bytes: boolean) -> HttpResponse<string | buffer>),
     websocket: (host: string, opts: HttpWebSocketOptions) -> HttpWebSocket, 
 }
 export type _zune_net = {
@@ -1139,7 +988,7 @@ declare class FFIPointerType extends FFIDataType
     newTag: (self: FFIPointerType, tag: string | buffer) -> FFIPointerType 
 end
 export type FFIAnyDataType = FFIDataType | FFIStructureType | FFIArrayType | FFIPointerType
-export type FFIFunctionDefintion = {
+export type FFIFunctionDefinition = {
     returns: FFIAnyDataType,
     args: {FFIAnyDataType}
 }
@@ -1228,17 +1077,17 @@ export type _zune_ffi = {
     dupe: (src: buffer | FFIPointer | vector) -> FFIPointer,
     tagName: (tag: number) -> string?,
     struct: (fields: {{[string]: FFIAnyDataType}}) -> FFIStructureType,
-    fn: (definition: FFIFunctionDefintion, srcPtr: FFIPointer) -> ((...any) -> any),
-    closure: (definition: FFIFunctionDefintion, handler: (...any) -> any) -> FFIPointer,
-    dlopen: (path: string, functions: {[string]: FFIFunctionDefintion}) -> FFILibrary, 
+    fn: (definition: FFIFunctionDefinition, srcPtr: FFIPointer) -> ((...any) -> any),
+    closure: (definition: FFIFunctionDefinition, handler: (...any) -> any) -> FFIPointer,
+    dlopen: (path: string, functions: {[string]: FFIFunctionDefinition}) -> FFILibrary, 
 }
 --[[ io ]]
 declare class IoReadable
     read: 
-        & ((self: IoReadable, amount: number?) -> buffer)
-        & ((self: IoReadable, amount: number?, bytes: true?) -> buffer)
+        & ((self: IoReadable, amount: number?, bytes: nil) -> buffer)
+        & ((self: IoReadable, amount: number?, bytes: true) -> buffer)
         & ((self: IoReadable, amount: number?, bytes: false) -> string)
-        & ((self: IoReadable, amount: number?, bytes: boolean?) -> string | buffer)
+        & ((self: IoReadable, amount: number?, bytes: boolean) -> string | buffer)
     readu8: (self: IoReadable) -> number
     readu16: (self: IoReadable) -> number
     readu32: (self: IoReadable) -> number
@@ -1261,10 +1110,10 @@ declare class IoWritable
 end
 declare class BufferStream
     read: 
-        & ((self: BufferStream, amount: number?) -> buffer)
-        & ((self: BufferStream, amount: number?, bytes: true?) -> buffer)
+        & ((self: BufferStream, amount: number?, bytes: nil) -> buffer)
+        & ((self: BufferStream, amount: number?, bytes: true) -> buffer)
         & ((self: BufferStream, amount: number?, bytes: false) -> string)
-        & ((self: BufferStream, amount: number?, bytes: boolean?) -> string | buffer)
+        & ((self: BufferStream, amount: number?, bytes: boolean) -> string | buffer)
     write: (self: BufferStream, data: string | buffer) -> ()
     pos: (self: BufferStream) -> number
     size: (self: BufferStream) -> number
@@ -1278,10 +1127,10 @@ declare class BufferSink
     len: number
     closed: boolean
     flush: 
-        & ((self: BufferSink) -> buffer)
-        & ((self: BufferSink, bytes: true?) -> buffer)
+        & ((self: BufferSink, bytes: nil) -> buffer)
+        & ((self: BufferSink, bytes: true) -> buffer)
         & ((self: BufferSink, bytes: false) -> string)
-        & ((self: BufferSink, bytes: boolean?) -> string | buffer)
+        & ((self: BufferSink, bytes: boolean) -> string | buffer)
     write: (self: BufferSink, data: string | buffer) -> ()
     writer: (self: BufferSink) -> IoWritable
     close: (self: BufferSink) -> () 
@@ -1306,59 +1155,213 @@ export type _zune_io = {
     stderr: FileHandle,
     stdin: FileHandle, 
 }
+--[[ crypto ]]
+type Input = string | buffer
+declare class CryptoHash
+    digest: 
+        & ((self: CryptoHash) -> buffer)
+        & ((self: CryptoHash, encoding: "binary") -> buffer)
+        & ((self: CryptoHash, encoding: "hex" | "base64") -> string)
+        & ((self: CryptoHash, encoding: string) -> string | buffer)
+    update: (self: CryptoHash, value: string | buffer) -> ()
+    copy: (self: CryptoHash) -> CryptoHash 
+end
+declare class TlsCertBundle
+
+end
+declare class TlsCertKeyPair
+
+end
+export type CryptoHashAlgorithms = 
+    | "sha1"
+    | "md5"
+    | "blake3"
+    | "sha224"
+    | "sha256"
+    | "sha384"
+    | "sha512"
+    | "sha3_224"
+    | "sha3_256"
+    | "sha3_384"
+    | "sha3_512"
+    | "blake2b128"
+    | "blake2b160"
+    | "blake2b256"
+    | "blake2b384"
+    | "blake2b512"
+    | "blake2s128"
+    | "blake2s160"
+    | "blake2s224"
+    | "blake2s256"
+type BcryptPasswordOptions = {
+    algorithm: "bcrypt"?,
+    cost: number?, 
+}
+type Argon2PasswordOptions = {
+    algorithm: ("argon2d" | "argon2i" | "argon2id")?,
+    time_cost: number?,
+    memory_cost: number?,
+    threads: number?, 
+}
+export type CryptoPasswordOptions = BcryptPasswordOptions | Argon2PasswordOptions
+type EncryptedData = {
+    cipher: buffer,
+    tag: buffer, 
+}
+export type CryptoTlsClientConfig = {
+    host: string,
+    ca: TlsCertBundle, 
+}
+export type _zune_crypto_password = {
+    hash: (password: string | buffer, opts: CryptoPasswordOptions?) -> string,
+    verify: (password: string | buffer, hash: string | buffer) -> boolean, 
+}
+export type _zune_crypto_uuid = {
+    v4: () -> string,
+    v7: () -> string, 
+}
+export type _zune_crypto_random = {
+    nextNumber: 
+        & (() -> number)
+        & ((min: number, max: number) -> number),
+    nextInteger: 
+        & (() -> number)
+        & ((min: number, max: number) -> number),
+    nextBoolean: () -> boolean,
+    fill: (buffer: buffer, offset: number, length: number) -> (), 
+}
+export type _zune_crypto_aead = {
+    aes_gcm: {
+        Aes128Gcm: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        },
+        Aes256Gcm: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        }, 
+    },
+    aes_ocb: {
+        Aes128Ocb: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        },
+        Aes256Ocb: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        }, 
+    },
+    aegis: {
+        Aegis128X4: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        },
+        Aegis128X2: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        },
+        Aegis128L: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        },
+        Aegis256X4: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        },
+        Aegis256X2: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        },
+        Aegis256: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        },
+        Aegis128X4_256: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        },
+        Aegis128X2_256: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        },
+        Aegis128L_256: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        },
+        Aegis256X4_256: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        },
+        Aegis256X2_256: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        },
+        Aegis256_256: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        }, 
+    },
+    chacha_poly: {
+        ChaCha8Poly1305: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        },
+        ChaCha12Poly1305: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        },
+        ChaCha20Poly1305: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        },
+        XChaCha8Poly1305: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        },
+        XChaCha12Poly1305: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        },
+        XChaCha20Poly1305: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        }, 
+    },
+    salsa_poly: {
+        XSalsa20Poly1305: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        }, 
+    },
+    isap: {
+        IsapA128A: {
+            encrypt: (data: Input, key: Input, nonce: Input, ad: Input?) -> EncryptedData,
+            decrypt: (cipher: Input, tag: Input, key: Input, nonce: Input, ad: Input?) -> string, 
+        }, 
+    }, 
+}
+export type _zune_crypto_tls = {
+    bundleFromSystem: () -> TlsCertBundle,
+    bundleFromFile: (file: string) -> TlsCertBundle,
+    keyPairFromFile: (certFile: string, keyFile: string) -> TlsCertKeyPair,
+    setupClient: (socket: NetworkSocket, config: CryptoTlsClientConfig) -> (),
+    setupServer: (socket: NetworkSocket, config: CryptoTlsServerConfig) -> (), 
+}
+export type CryptoTlsServerConfig = {
+    auth: TlsCertKeyPair, 
+}
+export type _zune_crypto = {
+    createHash: (algorithm: CryptoHashAlgorithms, secret: string | buffer?) -> CryptoHash,
+    password: _zune_crypto_password,
+    uuid: _zune_crypto_uuid,
+    random: _zune_crypto_random,
+    aead: _zune_crypto_aead,
+    tls: _zune_crypto_tls, 
+}
 --[[ require ]]
 export type _zune_require = {
     navigate: (path: string | buffer, from: (string | buffer)?, config: string | buffer?) -> string,
     getCached: (resolvedPath: string) -> any?, 
-}
---[[ mem ]]
-export type MemWritableSlice = buffer | FFIPointer
-export type MemReadableSlice = string | buffer | FFIPointer
-export type _zune_mem = {
-    MAX_SIZE: number,
-    len: (src: MemReadableSlice) -> number?,
-    copy: (dest: MemWritableSlice, destOffset: number, src: MemReadableSlice, srcOffset: number, count: number?) -> (),
-    slice: (src: MemReadableSlice, offset: number, count: number?) -> buffer,
-    eqlSlice: (a: MemReadableSlice, aOffset: number, b: MemReadableSlice, bOffset: number, count: number?) -> boolean,
-    eql: (a: MemReadableSlice, b: MemReadableSlice) -> boolean,
-    startsWith: (slice: MemReadableSlice, needle: MemReadableSlice) -> boolean,
-    endsWith: (slice: MemReadableSlice, needle: MemReadableSlice) -> boolean,
-    trim: (src: MemReadableSlice, values_to_strip: MemReadableSlice) -> buffer,
-    trimLeft: (src: MemReadableSlice, values_to_strip: MemReadableSlice) -> buffer,
-    trimRight: (src: MemReadableSlice, values_to_strip: MemReadableSlice) -> buffer,
-    find: (src: MemReadableSlice, needle: MemReadableSlice) -> number?,
-    findPos: (src: MemReadableSlice, offset: number, needle: MemReadableSlice) -> number?,
-    findLast: (src: MemReadableSlice, needle: MemReadableSlice) -> number?,
-    findScalar: (src: MemReadableSlice, char: number) -> number?,
-    findScalarPos: (src: MemReadableSlice, offset: number, char: number) -> number?,
-    findScalarLast: (src: MemReadableSlice, char: number) -> number?,
-    findAny: (src: MemReadableSlice, needle: MemReadableSlice) -> number?,
-    findAnyPos: (src: MemReadableSlice, offset: number, needle: MemReadableSlice) -> number?,
-    findAnyLast: (src: MemReadableSlice, needle: MemReadableSlice) -> number?,
-    findNone: (src: MemReadableSlice, needle: MemReadableSlice) -> number?,
-    findNonePos: (src: MemReadableSlice, offset: number, needle: MemReadableSlice) -> number?,
-    findNoneLast: (src: MemReadableSlice, needle: MemReadableSlice) -> number?,
-    findDiff: (src: MemReadableSlice, needle: MemReadableSlice) -> number?,
-    findDiffPos: (src: MemReadableSlice, offset: number, needle: MemReadableSlice) -> number?,
-    findMax: (src: MemReadableSlice, offset: number?, count: number?) -> number,
-    findMin: (src: MemReadableSlice, offset: number?, count: number?) -> number,
-    findMinMax: (src: MemReadableSlice, offset: number?, count: number?) -> (number, number),
-    cutPrefix: (src: MemReadableSlice, prefix: MemReadableSlice) -> buffer?,
-    cutSuffix: (src: MemReadableSlice, suffix: MemReadableSlice) -> buffer?,
-    cut: (src: MemReadableSlice, needle: MemReadableSlice) -> (buffer?, buffer?),
-    cutLast: (src: MemReadableSlice, needle: MemReadableSlice) -> (buffer?, buffer?),
-    cutScalar: (src: MemReadableSlice, char: number) -> (buffer?, buffer?),
-    cutScalarLast: (src: MemReadableSlice, char: number) -> (buffer?, buffer?),
-    replaceScalar: (src: MemWritableSlice, char: number, replacement: number, offset: number?, count: number?) -> (),
-    max: (src: MemReadableSlice, offset: number?, count: number?) -> number,
-    min: (src: MemReadableSlice, offset: number?, count: number?) -> number,
-    reverse: (src: MemWritableSlice, offset: number?, count: number?) -> (),
-    rotate: (src: MemWritableSlice, amount: number, offset: number?, count: number?) -> (),
-    set: (dest: MemWritableSlice, value: number, offset: number?, count: number?) -> (),
-    toVector2: (src: MemReadableSlice, offset: number?) -> vector,
-    toVector3: (src: MemReadableSlice, offset: number?) -> vector,
-    writeVector2: (dest: MemWritableSlice, offset: number?, vec: vector) -> (),
-    writeVector3: (dest: MemWritableSlice, offset: number?, vec: vector) -> (), 
 }
 --[[ sqlite ]]
 export type SQLite3Values = {
