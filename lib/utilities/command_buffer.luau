@@ -7,27 +7,27 @@ type World = jecs.World
 
 export type Identity = {
     --- Execute all commands and clear the buffer.
-    flush: () -> (),
+    read flush: () -> (),
     --- Peeks into the commands currently stored by the buffer.
-    peek: () -> Commands,
+    read peek: () -> Commands,
 
     --- Adds a component to the entity with no value.
-    add: <T>(entity: Entity, component: Id<T>) -> (),
+    read add: <T>(entity: Entity, component: Id<T>) -> (),
     --- Assigns a value to a component on the given entity.
-    set: <T>(entity: Entity, component: Id<T>, data: T) -> (),
+    read set: <T>(entity: Entity, component: Id<T>, data: T) -> (),
     --- Removes a component from the given entity.
-    remove: <T>(entity: Entity, component: Id<T>) -> (),
+    read remove: <T>(entity: Entity, component: Id<T>) -> (),
     --- Deletes an entity and all it's related components and relationships.
-    delete: (entity: Entity) -> (),
+    read delete: (entity: Entity) -> (),
 }
 
 export type Commands = {
-    add: { [Id]: { Entity } },
-    set: { [Id]: { [Entity]: unknown } },
-    remove: { [Id]: { Entity } },
-    delete: { Entity },
+    read add: { [Id]: { Entity } },
+    read set: { [Id]: { [Entity]: unknown } },
+    read remove: { [Id]: { Entity } },
+    read delete: { Entity },
 
-    deletion_lookup: { [Entity]: true },
+    read deletion_lookup: { [Entity]: true },
 }
 
 local function construct(world: World): Identity
@@ -38,6 +38,7 @@ local function construct(world: World): Identity
     -- Double memory usage for deletions but preserve order while keeping constant time lookups
     local deletion_lookup: { [Entity]: true } = {}
 
+    @native
     local function flush()
         for _, entity in delete_commands do
             world:delete(entity)
@@ -80,7 +81,8 @@ local function construct(world: World): Identity
         table.clear(deletion_lookup)
     end
 
-    local function peek()
+    @native
+    local function peek(): Commands
         return {
             add = add_commands,
             set = set_commands,
@@ -91,6 +93,7 @@ local function construct(world: World): Identity
         }
     end
 
+    @native
     local function add<T>(entity: Entity, component: Id<T>)
         local commands = add_commands[component]
         if not commands then
@@ -101,6 +104,7 @@ local function construct(world: World): Identity
         table.insert(commands, entity)
     end
 
+    @native
     local function set<T>(entity: Entity, component: Id<T>, data: T)
         local commands = set_commands[component]
         if not commands then
@@ -111,6 +115,7 @@ local function construct(world: World): Identity
         commands[entity] = data
     end
 
+    @native
     local function remove<T>(entity: Entity, component: Id<T>)
         local commands = remove_commands[component]
         if not commands then
@@ -121,6 +126,7 @@ local function construct(world: World): Identity
         table.insert(commands, entity)
     end
 
+    @native
     local function delete(entity: Entity)
         table.insert(delete_commands, entity)
         deletion_lookup[entity] = true

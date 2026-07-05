@@ -16,12 +16,14 @@ local function collect(event)
     local storage = {}
 
     local i = 0
+    @native
     local function connector(...)
         table.insert(storage, { ... })
         i += 1
     end
 
     local n = 0
+    @native
     local function iter()
         if n == i then
             n, i = 0, 0

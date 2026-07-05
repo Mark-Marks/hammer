@@ -27,19 +27,19 @@ To view per-version changes, see [the changelog](/CHANGELOG.md).
 All utilities that require a Jecs world to function are exposed via a constructor pattern.\
 For instance, to build a `ref`:
 ```luau
-local ref = hammer.ref(world)
+const ref = hammer.ref(world)
 ```
 This is the easiest solution for passing a world that doesn't sacrifice readability internally and externally or bind the developer to a Jecs version that hammer is currently using.
 
 A recommended approach to initialize the utilities which need a world is to place them in a shared ECS `std` folder, which's utilities you can use later:
 ```luau
 -- std/ref.luau
-local world = require("./world")
+const world = require("./world")
 return hammer.ref(world)
 ```
 ```luau
 -- my_system.luau
-local ref = require("@std/ref")
+const ref = require("@std/ref")
 ...
 ```
 Initializing them in every file on require shouldn't be a problem, though, as all of them are cached by world (spare for command buffers!).
@@ -51,8 +51,8 @@ Its purpose is to interface with signals in ECS code, which ideally should run e
 
 For instance, take Roblox's RemoteEvents:
 ```luau
-local pings = hammer.collect(events.ping.OnServerEvent)
-local function system()
+const pings = hammer.collect(events.ping.OnServerEvent)
+const function system()
     for _, player, ping in pings do
         events.ping:FireClient(player, "pong!")
     end
@@ -73,7 +73,7 @@ Iterator invalidation refers to an iterator (e.g. `world:query(Component)`) beco
 
 To prevent this, command buffers can be used to delay world operations to the end of the current frame:
 ```luau
-local command_buffer = hammer.command_buffer(world)
+const command_buffer = hammer.command_buffer(world)
 
 while true do
     step_systems()
@@ -89,22 +89,29 @@ command_buffer.add(entity, component) -- This runs after all of the systems run;
 A [ref](/lib/utilities/ref.luau) allows for storing and getting entities via some form of reference.\
 This is particularly useful for situations where you reconcile entities into your world from a foreign place, e.g. from across a networking boundary, or need an easy way to get an entity from an object, e.g. a player.
 ```luau
-local ref = hammer.ref(world)
+const ref = hammer.ref(world)
 
 for id in net.new_entities.iter() do
-    local entity = ref(`foreign-{id}`) -- A new entity that can be tracked via a foreign id
+    const entity = ref(`foreign-{id}`) -- A new entity that can be tracked via a foreign id
+    -- ref(`foreign-{id}`) and ref.reference(`foreign-{id}`) are equal
 end
 ```
 
 Refs by default create a new entity if the given value doesn't reference any stored one. In case you want to see if a reference exists, you can find one:
 ```luau
-local entity[: Entity?] = ref.find(`my-key`)
+const entity[: Entity?] = ref.find("my-key")
 ```
 
 Refs can also be deleted:
 ```luau
-local entity = ref(`my-key`)
-ref.delete(`my-key`) -- `entity` still persists in the world, but `my-key` doesn't refer to it anymore.
+const entity = ref("my-key")
+ref.delete("my-key") -- `entity` still persists in the world, but `my-key` doesn't refer to it anymore.
+```
+
+When trying to reference an entity, via `ref()` or `ref.reference()`, you may also optionally pass a Jecs id which'll be added to the entity if it doesn't exist and has to be created.\
+This is meant to be used alongside the IsA addon, to make sure entities are initialized with all of their necessary components prior to being used.
+```luau
+const entity = ref("swordfish-ii", pair(IsA, Spaceship)) -- The entity referenced via `swordfish-ii` will always be at least a Spaceship
 ```
 
 Refs are automatically cached by world. `ref(world)` will have the same underlying references as `ref(world)`.\
@@ -124,7 +131,7 @@ end)
 
 Monitors are a special kind of observer, which run whenever an entity starts or stops matching a query.
 ```luau
-local monitor = hammer.monitor(world:query(Position, Velocity))
+const monitor = hammer.monitor(world:query(Position, Velocity))
 monitor.added(function(entity)
     --- Ran whenever an entity starts matching the query.
     --- In this case, the entity began to have both a position and velocity.
@@ -137,7 +144,7 @@ end)
 
 Both kinds of observers return tables which contain a disconnect function serving as a way to clean the observer up.
 ```luau
-local observer = hammer.observer(...)
+const observer = hammer.observer(...)
 observer.disconnect()
 ```
 
@@ -152,8 +159,8 @@ Observers are a direct copy of [the addon in the Jecs repo](https://github.com/U
 [Intervals](/lib/utilities/interval.luau) allow for throttling systems to only run every `n` seconds. This can, for instance, be useful to throttle networking events, or physics.
 
 ```luau
-local replication_throttle = hammer.interval(1 / 10) -- Run every 100ms
-local function replication()
+const replication_throttle = hammer.interval(1 / 10) -- Run every 100ms
+const function replication()
     if not replication_throttle() then
         return
     end
@@ -171,20 +178,20 @@ end
 
 A nice use of this is for entity prefabs, allowing you to have a "template" entity you can create copies of via adding the relationship.
 ```luau
-local IsA = hammer.is_a(world)
+const IsA = hammer.is_a(world)
 
-local Spaceship = world:component()
+const Spaceship = world:component()
 world:set(Spaceship, Health, 250)
 world:set(Spaceship, Shields, 50)
 world:set(Spaceship, Damage, 35)
 world:set(Spaceship, Position, vector.create(100, 20, 100))
 world:set(Spaceship, Velocity, vector.create(10, 0, 4))
 
-local my_spaceship = world:entity()
+const my_spaceship = world:entity()
 world:add(my_spaceship, pair(IsA, Spaceship))
 -- `my_spaceship` now has all of the components of `Spaceship`, alongside the component `Spaceship` itself. Be careful while iterating spaceships though - to not include the prefab, make sure to add `pair(IsA, Spaceship)` to your query!
 -- You can override the components by operating on the world like usual:
-world:set(spaceship, Health, 230)
+world:set(my_spaceship, Health, 230)
 ```
 
 A further read can be found at the [Flecs relationships article](https://www.flecs.dev/flecs/md_docs_2Relationships.html#the-isa-relationship), and specifically the section about IsA relationships.

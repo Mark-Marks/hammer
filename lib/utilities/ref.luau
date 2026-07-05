@@ -4,9 +4,9 @@ local jecs = require("../../jecs")
 type Entity<T = any> = jecs.Entity<T>
 
 export type Identity = setmetatable<{}, {
-    __call: <T>(any, key: unknown) -> Entity<T>,
+    __call: <T>(any, key: unknown, is_a: jecs.Id<any>?) -> Entity<T>,
     __index: {
-        reference: <T>(key: unknown) -> Entity<T>,
+        reference: <T>(key: unknown, is_a: jecs.Id<any>?) -> Entity<T>,
         find: <T>(key: unknown) -> Entity<T>?,
         delete: <T>(key: unknown) -> Entity<T>?,
     },
@@ -26,16 +26,21 @@ local function construct(world: jecs.World, skip_cache: boolean?): Identity
 
     local lookup: { [unknown]: Entity } = {}
 
-    local function ref<T>(key: unknown): Entity<T>
+    @native
+    local function ref<T>(key: unknown, is_a: jecs.Id<any>?): Entity<T>
         local entity = lookup[key]
         if not entity then
             entity = world:entity()
+            if is_a ~= nil then
+                world:add(entity, is_a)
+            end
             lookup[key] = entity
         end
 
         return entity
     end
 
+    @native
     local function find<T>(key: unknown): Entity<T>?
         local entity = lookup[key]
         if not entity then
@@ -45,14 +50,16 @@ local function construct(world: jecs.World, skip_cache: boolean?): Identity
         return entity
     end
 
+    @native
     local function delete<T>(key: unknown): Entity<T>?
         local entity = lookup[key]
         lookup[key] = nil
         return entity
     end
 
-    local function call<T>(_, key: unknown): Entity<T>
-        return ref(key)
+    @native
+    local function call<T>(_, key: unknown, is_a: jecs.Id<any>?): Entity<T>
+        return ref(key, is_a)
     end
 
     local self = setmetatable({}, {

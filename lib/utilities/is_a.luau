@@ -16,7 +16,7 @@ local function construct(world: jecs.World): jecs.Id
     local IsA = world:entity()
     cache[world] = IsA
 
-    world:added(IsA, function(component: any, pair: any)
+    world:added(IsA, @native function(component: any, pair: any)
         local is = jecs.pair_second(world, pair)
         assert(component ~= is, "Circular IsA inheritance")
 

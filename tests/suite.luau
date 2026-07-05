@@ -41,6 +41,18 @@ testing.describe("hammer.ref", function()
         testing.expectEqual(a, b)
     end)
 
+    testing.test(
+        "An entity can be automatically added to a reference upon creation",
+        function()
+            local world = jecs.world()
+            local ref = hammer.ref(world, true)
+
+            local some_ent = world:entity()
+            local a = ref(1234, some_ent)
+            testing.expect(world:has(a, some_ent)).toBeTruthy()
+        end
+    )
+
     testing.test("Is unable to find not created references", function()
         local world = jecs.world()
         local ref = hammer.ref(world, true)

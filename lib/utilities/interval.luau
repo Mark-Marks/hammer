@@ -17,6 +17,7 @@
 local function interval(n: number)
     local pin: number = nil :: any
 
+    @native
     local function throttle()
         if not pin then
             pin = os.clock()
