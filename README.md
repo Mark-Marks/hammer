@@ -201,3 +201,5 @@ The implementation is based on [the IsA gist](https://gist.github.com/Ukendio/0d
 ## ⚖️ License
 
 This project is licensed under the terms of the MIT license. To further explore the terms, read [here](/LICENSE).
+
+Any contribution of any LLM-generated content will be rejected and result in an immediate ban for the contributor, without recourse.
